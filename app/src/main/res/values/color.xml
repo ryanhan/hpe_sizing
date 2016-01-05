@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="hpe_green">#02B294</color>
+    <color name="detail_title">#cc9933</color>
+    <color name="dark_grey">#585858</color>
+    <color name="white_grey">#eeeeee</color>
+    <color name="light_grey">#e6e6e6</color>
+    <color name="red">#da3838</color>
+    <color name="light_blue">#2c8cd5</color>
+    <color name="dark_blue">#2083ce</color>
+    <color name="dark_green">#08a68b</color>
+
+</resources>

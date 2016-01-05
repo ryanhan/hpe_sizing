@@ -1,0 +1,51 @@
+<resources>
+    <string name="app_name">HPE Sizing</string>
+    <string name="xlistview_header_hint_normal">Pull to Refresh</string>
+    <string name="xlistview_header_hint_ready">Release to Refresh Data</string>
+    <string name="xlistview_header_hint_loading">Loading Emails&#8230;</string>
+    <string name="xlistview_header_last_time">Last Update：</string>
+    <string name="xlistview_footer_hint_normal">Find More</string>
+    <string name="xlistview_footer_hint_ready">Release to Load More</string>
+
+    <string name="never">Never</string>
+    <string name="ppmid">PPM ID:&#160;</string>
+    <string name="project_name">Project Name:&#160;</string>
+    <string name="planning_cycle">Planning Cycle:&#160;</string>
+    <string name="contact">Contact:&#160;</string>
+    <string name="comments">Comments From Requester:&#160;</string>
+    <string name="teams">All Teams Needed:&#160;</string>
+    <string name="complete">Sizing-Complete:&#160;</string>
+    <string name="status">PPM Status:&#160;</string>
+    <string name="start_service">The scheduled service started now.</string>
+    <string name="stop_service">The scheduled service stopped now.</string>
+    <string name="first_time_loading">First Time Loading&#8230;Please Wait&#8230;</string>
+
+    <string name="menu_show_marked">Only Marked</string>
+    <string name="menu_show_all">Show All</string>
+    <string name="menu_restart_service">Restart Listener</string>
+    <string name="menu_stop_service">Stop Listener</string>
+
+    <string name="not_started">NOT ASSIGNED</string>
+    <string name="assigned">ASSIGNED</string>
+    <string name="shared">SHARED</string>
+
+    <string name="assign">Assign</string>
+    <string name="assign_to">Assign To&#8230;</string>
+    <string name="share">Share</string>
+    <string name="change_assign">Change Assignment</string>
+    <string name="remove_assign">Remove Assignment</string>
+
+    <string name="checking_update">Checking Update&#8230;</string>
+    <string name="error_retry">Update Error. Please retry.</string>
+    <string name="already_latest_version">Already the Latest Version.</string>
+    <string name="has_new_version">New Version</string>
+    <string name="confirm_to_download">Confirm to Update?</string>
+    <string name="start_download">Start to Download&#8230;</string>
+    <string name="downloading">Downloading</string>
+    <string name="download_fail">Downloading Failed.</string>
+    <string name="download_success">Downloading Finished.</string>
+
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+
+</resources>

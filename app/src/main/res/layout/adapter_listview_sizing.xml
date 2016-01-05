@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/sizing_list_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/listview_new_bg"
+    android:orientation="horizontal">
+
+    <LinearLayout
+        android:id="@+id/sizing_list_bar_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/sizing_list_bar"
+            android:layout_width="@dimen/status_bar_width"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/listview_vertical_padding"
+        android:layout_marginLeft="@dimen/activity_horizontal_margin"
+        android:layout_marginTop="@dimen/listview_vertical_padding"
+        android:layout_weight="1"
+        android:paddingRight="@dimen/activity_horizontal_margin">
+
+        <TextView
+            android:id="@+id/sizing_list_ppmid_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:text="@string/ppmid"
+            android:textColor="@color/detail_title"
+            android:textSize="@dimen/listview_ppmid_font_size"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/sizing_list_ppmid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/sizing_list_ppmid_title"
+            android:layout_toRightOf="@id/sizing_list_ppmid_title"
+            android:ellipsize="marquee"
+            android:singleLine="true"
+            android:textSize="@dimen/listview_ppmid_font_size"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/sizing_list_planning_cycle_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@id/sizing_list_ppmid_title"
+            android:layout_below="@id/sizing_list_ppmid_title"
+            android:layout_marginTop="@dimen/listview_ppmid_title_interval"
+            android:text="@string/planning_cycle"
+            android:textColor="@color/detail_title"
+            android:textSize="@dimen/listview_font_size"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/sizing_list_planning_cycle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/sizing_list_planning_cycle_title"
+            android:layout_toRightOf="@id/sizing_list_planning_cycle_title"
+            android:ellipsize="marquee"
+            android:singleLine="true"
+            android:textSize="@dimen/listview_font_size" />
+
+
+        <TextView
+            android:id="@+id/sizing_list_project_name_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@id/sizing_list_planning_cycle_title"
+            android:layout_below="@id/sizing_list_planning_cycle_title"
+            android:layout_marginTop="@dimen/listview_line_interval"
+            android:text="@string/project_name"
+            android:textColor="@color/detail_title"
+            android:textSize="@dimen/listview_font_size"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/sizing_list_project_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@id/sizing_list_project_name_title"
+            android:layout_below="@id/sizing_list_project_name_title"
+            android:layout_marginTop="@dimen/listview_line_interval"
+            android:ellipsize="marquee"
+            android:maxLines="2"
+            android:textSize="@dimen/listview_font_size" />
+
+        <TextView
+            android:id="@+id/sizing_list_contact_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@id/sizing_list_project_name"
+            android:layout_below="@id/sizing_list_project_name"
+            android:layout_marginTop="@dimen/listview_line_interval"
+            android:text="@string/contact"
+            android:textColor="@color/detail_title"
+            android:textSize="@dimen/listview_font_size"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/sizing_list_contact"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/sizing_list_contact_title"
+            android:layout_toRightOf="@id/sizing_list_contact_title"
+            android:ellipsize="marquee"
+            android:singleLine="true"
+            android:textSize="@dimen/listview_font_size" />
+
+        <ImageView
+            android:id="@+id/sizing_list_click"
+            android:layout_width="@dimen/listview_icon_size"
+            android:layout_height="@dimen/listview_icon_size"
+            android:layout_alignParentRight="true"
+            android:layout_alignTop="@id/sizing_list_ppmid"
+            android:layout_marginLeft="10dp"
+            android:src="@drawable/grey_flag" />
+
+        <TextView
+            android:id="@+id/sizing_list_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/sizing_list_click"
+            android:layout_toLeftOf="@id/sizing_list_click"
+            android:textSize="@dimen/listview_ppmid_font_size"
+            android:textStyle="bold"/>
+
+    </RelativeLayout>
+
+</LinearLayout>

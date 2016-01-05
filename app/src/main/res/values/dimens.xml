@@ -1,0 +1,22 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="status_bar_width">10dp</dimen>
+    <dimen name="adapter_margin">10dp</dimen>
+    <dimen name="actionBar_height">55dp</dimen>
+    <dimen name="listview_vertical_padding">16dp</dimen>
+    <dimen name="listview_interval">10dp</dimen>
+    <dimen name="listview_text_interval">2dp</dimen>
+    <dimen name="listview_line_interval">2dp</dimen>
+    <dimen name="listview_ppmid_title_interval">5dp</dimen>
+    <dimen name="listview_ppmid_font_size">18sp</dimen>
+    <dimen name="listview_font_size">14sp</dimen>
+    <dimen name="detail_activity_title_font_size">18sp</dimen>
+    <dimen name="detail_activity_font_size">16sp</dimen>
+    <dimen name="detail_activity_small_font_size">12sp</dimen>
+    <dimen name="detail_activity_small_margin">3dp</dimen>
+    <dimen name="detail_activity_big_margin">10dp</dimen>
+    <dimen name="listview_icon_size">25dp</dimen>
+
+</resources>
