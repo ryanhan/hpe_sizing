@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/SPNotification.iml" filepath="$PROJECT_DIR$/SPNotification.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/hpe_sizing.iml" filepath="$PROJECT_DIR$/hpe_sizing.iml" />
     </modules>
   </component>
 </project>

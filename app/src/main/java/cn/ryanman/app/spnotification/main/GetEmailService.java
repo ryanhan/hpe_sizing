@@ -56,7 +56,7 @@ public class GetEmailService extends Service {
         Log.d("SPNotification", "Service Started.");
         if (!gettingEmail) {
             gettingEmail = true;
-            MailAsyncTask task = new MailAsyncTask();
+            MailAsyncTask task = new MailAsyncTask(GetEmailService.this);
             task.setOnDataFinishedListener(new OnDataFinishedListener() {
                 @Override
                 public void onDataSuccessfully(Object data) {

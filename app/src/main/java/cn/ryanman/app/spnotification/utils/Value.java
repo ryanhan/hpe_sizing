@@ -1,13 +1,11 @@
 package cn.ryanman.app.spnotification.utils;
 
-/**
- * Created by Ryan on 2015/12/16.
- */
 public class Value {
 
     public static final String APPINFO = "appinfo";
     public static final String FIRST = "first";
     public static final String UPDATETIME = "updatetime";
+    public static final String LASTEMAILTIME = "lastemailtime";
     public static final String HPSBTEAM = "Service Bus Platform";
     public static final String LASTMODIFY = "Last Modified";
     public static final String EDITED = "--EDITED PART!!--";
