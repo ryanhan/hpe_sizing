@@ -252,11 +252,7 @@ public class MainActivity extends Activity implements IXListViewListener {
     }
 
     private void stopRefresh() {
-        //SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
         sizingListView.stopRefresh();
-//        SharedPreferences.Editor editor = pref.edit();
-//        editor.putString(Value.UPDATETIME, df.format(new Date()));
-//        editor.commit();
         sizingListView.setRefreshTime(pref.getString(Value.UPDATETIME, getString(R.string.never)));
         isRefreshing = false;
         Log.d("SPNotification", "Refresh List Finished.");

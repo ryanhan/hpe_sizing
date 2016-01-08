@@ -10,15 +10,12 @@ import android.os.IBinder;
 import android.support.v4.app.NotificationCompat.Builder;
 import android.util.Log;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 
 import cn.ryanman.app.spnotification.R;
 import cn.ryanman.app.spnotification.listener.OnDataFinishedListener;
 import cn.ryanman.app.spnotification.listener.OnServiceCompletedListener;
-import cn.ryanman.app.spnotification.model.Request;
-import cn.ryanman.app.spnotification.utils.DatabaseUtils;
+import cn.ryanman.app.spnotification.utils.AppUtils;
 import cn.ryanman.app.spnotification.utils.MailAsyncTask;
 import cn.ryanman.app.spnotification.utils.Value;
 
@@ -60,19 +57,17 @@ public class GetEmailService extends Service {
             task.setOnDataFinishedListener(new OnDataFinishedListener() {
                 @Override
                 public void onDataSuccessfully(Object data) {
-                    List<Request> requests = (List<Request>) data;
-                    DatabaseUtils.addRecords(GetEmailService.this, requests);
-                    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
+                    int number = (Integer) data;
                     SharedPreferences pref = getSharedPreferences(Value.APPINFO, Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = pref.edit();
-                    editor.putString(Value.UPDATETIME, df.format(new Date()));
+                    editor.putString(Value.UPDATETIME, AppUtils.formatDate(new Date()));
                     editor.commit();
                     if (onServiceCompletedListener != null) {
                         onServiceCompletedListener.onDataSuccessfully();
                     }
                     gettingEmail = false;
-                    if (requests.size() > 0) {
-                        showNotification(requests.size());
+                    if (number > 0) {
+                        showNotification(number);
                     }
                     Log.d("SPNotification", "Get Email Completed!");
                 }

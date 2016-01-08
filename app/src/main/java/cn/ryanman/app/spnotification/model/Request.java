@@ -1,8 +1,5 @@
 package cn.ryanman.app.spnotification.model;
 
-/**
- * Created by Ryan on 2015/12/16.
- */
 public class Request {
 
     public static final int ADD = 1;
@@ -30,6 +27,7 @@ public class Request {
     private String resource;
     private String lastmodified;
     private boolean important;
+    private String sentDate;
 
     public String getPpmid() {
         return ppmid;
@@ -157,6 +155,14 @@ public class Request {
 
     public void setImportant(boolean important) {
         this.important = important;
+    }
+
+    public String getSentDate() {
+        return sentDate;
+    }
+
+    public void setSentDate(String sentDate) {
+        this.sentDate = sentDate;
     }
 
     @Override

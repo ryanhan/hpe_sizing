@@ -69,15 +69,19 @@ public class EmailUtils {
                     MimeMultipart multipart = (MimeMultipart) content;
                     Request request = parseContent(multipart, subject);
                     if (request != null) {
+                        // Set Request SentDate
+                        request.setSentDate(AppUtils.formatDate(message.getSentDate()));
                         requests.add(request);
                         Log.d("SPNotification", request.getPpmid());
+                    }
+                    else{
+                        //Archive Email
+                        
                     }
                 }
             }
             System.out.println("-------------------------------------------");
         }
-
-
         return requests;
     }
 

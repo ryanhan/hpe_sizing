@@ -2,6 +2,7 @@ package cn.ryanman.app.spnotification.utils;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
@@ -42,6 +43,10 @@ public class DatabaseUtils {
             } else if (request.getOperation() == Request.DELETE) {
                 deleteRecord(sqliteDatabase, request);
             }
+            SharedPreferences pref = context.getSharedPreferences(Value.APPINFO, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = pref.edit();
+            editor.putString(Value.LASTEMAILTIME, request.getSentDate());
+            editor.commit();
         }
         dbHelper.close();
     }
@@ -282,8 +287,7 @@ public class DatabaseUtils {
         if (cursor.getInt(cursor
                 .getColumnIndex(DatabaseHelper.IMPORTANT)) == 1) {
             request.setImportant(true);
-        }
-        else {
+        } else {
             request.setImportant(false);
         }
         if (cursor.getInt(cursor
