@@ -2,6 +2,7 @@ package cn.ryanman.app.spnotification.utils;
 
 import android.util.Log;
 
+import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.IMAPMessage;
 
 import java.io.IOException;
@@ -56,12 +57,14 @@ public class EmailUtils {
         return map;
     }
 
-    public static List<Request> parseEmailBody(Message[] messages) throws MessagingException, IOException {
+    public static List<Request> parseEmailBody(IMAPFolder folder, Message[] messages) throws MessagingException, IOException {
         List<Request> requests = new ArrayList<Request>();
+        int count = 1;
         for (Message message : messages) {
             IMAPMessage msg = (IMAPMessage) message;
+
             String subject = MimeUtility.decodeText(msg.getSubject());
-            System.out.println("Subject: [" + subject + "]");
+            Log.d("SPNotification", count++ + "/" + messages.length + "  Subject: [" + subject + "]");
             if (subject.startsWith("FW: HPIT Request for Sizing - ")) {
                 subject = subject.replace("FW: HPIT Request for Sizing -", "").replaceAll(" ", "");
                 Object content = message.getContent();
@@ -69,14 +72,14 @@ public class EmailUtils {
                     MimeMultipart multipart = (MimeMultipart) content;
                     Request request = parseContent(multipart, subject);
                     if (request != null) {
-                        // Set Request SentDate
-                        request.setSentDate(AppUtils.formatDate(message.getSentDate()));
+                        //Set Request MessageUID
+                        request.setUid(folder.getUID(msg));
                         requests.add(request);
                         Log.d("SPNotification", request.getPpmid());
                     }
                     else{
                         //Archive Email
-                        
+
                     }
                 }
             }
@@ -163,7 +166,7 @@ public class EmailUtils {
                         "<span class=\"editedicon\">" + Value.EDITED + "</span>")
                 .replaceAll("<span class=\"edited\">", "<span class=\"edited\">" + Value.OLDEDITED)
                 .replaceAll("<.*?>", "\n").replaceAll("&nbsp;", "").replace("\r", "").replaceAll("\n{2,}", "\n");
-        System.out.println(formatted);
+        //System.out.println(formatted);
 
         Scanner scanner = new Scanner(formatted);
         String line = null;

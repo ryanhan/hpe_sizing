@@ -84,10 +84,10 @@ public class DetailActivity extends Activity {
         setTextView(status, oldStatus, request.getPpmStatus());
         lastmodify.setText(request.getLastmodified());
 
-        if (request.getStatus() == Request.NOT_STARTED) {
-            assign.setText(getString(R.string.assign));
-        } else {
+        if (request.isAssigned()) {
             assign.setText(request.getResource());
+        } else {
+            assign.setText(getString(R.string.assign));
         }
 
         assign.setOnClickListener(new View.OnClickListener() {

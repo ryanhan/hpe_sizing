@@ -50,13 +50,16 @@ public class MainActivity extends Activity implements IXListViewListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         loadingLayout = (LinearLayout) findViewById(R.id.loading_layout);
+        sizingListView = (XListView) findViewById(R.id.sizing_listview);
         pref = this.getSharedPreferences(Value.APPINFO, Context.MODE_PRIVATE);
         if (pref.getBoolean(Value.FIRST, true)){
+            Log.d("SPNotification", "First Login");
             AppUtils.startPollingService(this, Value.INTERVAL, GetEmailService.class);
             SharedPreferences.Editor editor = pref.edit();
             editor.putBoolean(Value.FIRST, false);
             editor.commit();
             loadingLayout.setVisibility(View.VISIBLE);
+            sizingListView.setVisibility(View.INVISIBLE);
         }
         requests = new ArrayList<Request>();
         isRefreshing = false;
@@ -67,7 +70,6 @@ public class MainActivity extends Activity implements IXListViewListener {
             CheckUpdateAsyncTask checkUpdateAysncTask = new CheckUpdateAsyncTask(this, false);
             checkUpdateAysncTask.execute();
         }
-        sizingListView = (XListView) findViewById(R.id.sizing_listview);
         adapter = new SizingListAdapter(this, requests);
         sizingListView.setAdapter(adapter);
         sizingListView.setPullRefreshEnable(true);
@@ -96,25 +98,20 @@ public class MainActivity extends Activity implements IXListViewListener {
 
                 final int index = (int) id;
                 final String ppmid = requests.get(index).getPpmid();
-                int status = requests.get(index).getStatus();
+                //int status = requests.get(index).getStatus();
                 String title = null;
                 String[] items = null;
-                if (status == Request.NOT_STARTED) {
+                if (!requests.get(index).isAssigned()) {
                     title = getString(R.string.not_started);
                     items = new String[2];
                     items[0] = getString(R.string.assign);
                     items[1] = getString(R.string.share);
                 } else {
+                    title = requests.get(index).getResource();
                     items = new String[3];
                     items[0] = getString(R.string.change_assign);
                     items[1] = getString(R.string.remove_assign);
                     items[2] = getString(R.string.share);
-                    if (status == Request.ASSIGNED) {
-                        title = requests.get(index).getResource();
-                    }
-//                    else if (status == Request.SHARED) {
-//                        title = getString(R.string.shared);
-//                    }
                 }
                 final int itemsCount = items.length;
 
@@ -174,6 +171,7 @@ public class MainActivity extends Activity implements IXListViewListener {
                 @Override
                 public void onDataSuccessfully() {
                     loadingLayout.setVisibility(View.GONE);
+                    sizingListView.setVisibility(View.VISIBLE);
                     updateList();
                     stopRefresh();
                 }
@@ -239,7 +237,7 @@ public class MainActivity extends Activity implements IXListViewListener {
     @Override
     public void onRefresh() {
         if (!isRefreshing) {
-            updateList();
+            //updateList();
             AppUtils.restartPollingService(MainActivity.this, Value.INTERVAL, GetEmailService.class);
             isRefreshing = true;
             Log.d("SPNotification", "Refresh List Started.");

@@ -65,7 +65,6 @@ public class GetEmailService extends Service {
                     if (onServiceCompletedListener != null) {
                         onServiceCompletedListener.onDataSuccessfully();
                     }
-                    gettingEmail = false;
                     if (number > 0) {
                         showNotification(number);
                     }
@@ -77,6 +76,7 @@ public class GetEmailService extends Service {
                     Log.d("SPNotification", "failed");
                 }
             });
+            gettingEmail = false;
             task.execute();
             Log.d("SPNotification", "Service Start to Get Email!");
         }

@@ -110,30 +110,19 @@ public class SizingListAdapter extends ArrayAdapter<Request> {
             holder.sizingBar.setVisibility(View.GONE);
         }
 
-        switch (getItem(position).getStatus()) {
-            case Request.NOT_STARTED:
-                holder.status.setText(context.getString(R.string.not_started));
-                holder.status.setTextColor(context.getResources().getColor(R.color.dark_grey));
-                holder.layout.setBackgroundResource(R.drawable.listview_new_bg);
-                break;
-//            case Request.SHARED:
-//                holder.status.setText(getItem(position).getResource());
-//                holder.status.setTextColor(context.getResources().getColor(R.color.light_blue));
-//                holder.layout.setBackgroundResource(R.drawable.listview_read_bg);
-//                holder.click.setVisibility(View.VISIBLE);
-//                holder.click.setImageDrawable(context.getResources().getDrawable(R.drawable.click));
-//                break;
-            case Request.ASSIGNED:
-                holder.status.setText(getItem(position).getResource());
-                holder.status.setTextColor(context.getResources().getColor(R.color.light_blue));
-                holder.layout.setBackgroundResource(R.drawable.listview_read_bg);
-                break;
+        if (getItem(position).isAssigned()) {
+            holder.status.setText(getItem(position).getResource());
+            holder.status.setTextColor(context.getResources().getColor(R.color.light_blue));
+            holder.layout.setBackgroundResource(R.drawable.listview_read_bg);
+        } else {
+            holder.status.setText(context.getString(R.string.not_started));
+            holder.status.setTextColor(context.getResources().getColor(R.color.dark_grey));
+            holder.layout.setBackgroundResource(R.drawable.listview_new_bg);
         }
 
-        if (getItem(position).isImportant()){
+        if (getItem(position).isImportant()) {
             holder.click.setImageDrawable(context.getResources().getDrawable(R.drawable.red_flag));
-        }
-        else{
+        } else {
             holder.click.setImageDrawable(context.getResources().getDrawable(R.drawable.grey_flag));
         }
 

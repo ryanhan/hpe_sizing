@@ -34,18 +34,18 @@ public class DatabaseUtils {
             if (request.getOperation() == Request.ADD) {
                 addRecord(sqliteDatabase, request);
             } else if (request.getOperation() == Request.CHANGE) {
-                int id = findRecord(sqliteDatabase, request.getPpmid());
-                if (id == -1) {
-                    addRecord(sqliteDatabase, request);
-                } else {
-                    updateRecord(sqliteDatabase, request);
+                Request oldRequest = searchRecord(sqliteDatabase, request.getPpmid());
+                if (oldRequest != null) {
+                    setOldRecord(sqliteDatabase, request.getPpmid());
+                    syncNewRequest(oldRequest, request);
                 }
+                addRecord(sqliteDatabase, request);
             } else if (request.getOperation() == Request.DELETE) {
                 deleteRecord(sqliteDatabase, request);
             }
             SharedPreferences pref = context.getSharedPreferences(Value.APPINFO, Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = pref.edit();
-            editor.putString(Value.LASTEMAILTIME, request.getSentDate());
+            editor.putLong(Value.LASTEMAILUID, request.getUid());
             editor.commit();
         }
         dbHelper.close();
@@ -53,46 +53,74 @@ public class DatabaseUtils {
 
     private static void addRecord(SQLiteDatabase sqliteDatabase, Request request) {
         ContentValues values = createContentValues(request);
-        values.put(DatabaseHelper.OPERATION, Request.ADD);
         values.put(DatabaseHelper.READ, Request.UNREAD);
-        values.put(DatabaseHelper.STATUS, Request.NOT_STARTED);
-        values.put(DatabaseHelper.TIME, Long.toString(System.currentTimeMillis()));
+        //values.put(DatabaseHelper.ASSIGNED, Request.NOT_ASSIGNED);
+        values.put(DatabaseHelper.LATEST, Request.LATEST);
         sqliteDatabase.insert(DatabaseHelper.REQUEST, null, values);
         Log.d("SPNotification", "SQLite " + request.getPpmid() + " inserted");
     }
 
-    private static int findRecord(SQLiteDatabase sqliteDatabase, String ppmid) {
-        Cursor cursor = sqliteDatabase
-                .query(true,
-                        DatabaseHelper.REQUEST,
-                        new String[]{DatabaseHelper.ID},
-                        DatabaseHelper.PPMID + "=?",
-                        new String[]{String.valueOf(ppmid)}, null,
-                        null, DatabaseHelper.ID, null);
-        List<Integer> ids = new ArrayList<Integer>();
+    private static Request searchRecord(SQLiteDatabase sqliteDatabase, String ppmid) {
+        Cursor cursor = sqliteDatabase.query(DatabaseHelper.REQUEST, null,
+                DatabaseHelper.PPMID + "=? and " + DatabaseHelper.LATEST + "=?",
+                new String[]{String.valueOf(ppmid), "1"}, null, null, null);
+
+        Request request = null;
         while (cursor.moveToNext()) {
-            ids.add(cursor.getInt(cursor.getColumnIndex(DatabaseHelper.ID)));
+            request = new Request();
+            if (cursor.getInt(cursor
+                    .getColumnIndex(DatabaseHelper.ASSIGNED)) == Request.ASSIGNED) {
+                request.setAssigned(true);
+                request.setResource(cursor.getString(cursor
+                        .getColumnIndex(DatabaseHelper.RESOURCE)));
+            } else {
+                request.setAssigned(false);
+            }
+            if (cursor.getInt(cursor
+                    .getColumnIndex(DatabaseHelper.IMPORTANT)) == Request.IMPORTANT) {
+                request.setImportant(true);
+            } else {
+                request.setImportant(false);
+            }
+            break;
         }
-        if (ids.size() == 1) {
-            return ids.get(0);
-        }
-        return -1;
+        return request;
     }
 
-    private static void updateRecord(SQLiteDatabase sqliteDatabase, Request request) {
-        ContentValues values = createContentValues(request);
-        String currentPpmid;
-        if (request.getOldPpmid() == null) {
-            currentPpmid = request.getPpmid();
-        } else {
-            currentPpmid = request.getOldPpmid();
-        }
-        values.put(DatabaseHelper.OPERATION, Request.CHANGE);
-        values.put(DatabaseHelper.READ, Request.UNREAD);
-        values.put(DatabaseHelper.TIME, Long.toString(System.currentTimeMillis()));
-        sqliteDatabase.update(DatabaseHelper.REQUEST, values, DatabaseHelper.PPMID + "=?", new String[]{currentPpmid});
-        Log.d("SPNotification", "SQLite " + request.getPpmid() + " updated");
+    private static void setOldRecord(SQLiteDatabase sqliteDatabase, String ppmid) {
+        ContentValues values = new ContentValues();
+        values.put(DatabaseHelper.LATEST, Request.OUT_OF_DATE);
+        sqliteDatabase.update(DatabaseHelper.REQUEST, values,
+                DatabaseHelper.PPMID + "=?",
+                new String[]{ppmid});
     }
+
+    private static void syncNewRequest(Request oldRequest, Request newRequest) {
+        if (oldRequest.isImportant()) {
+            newRequest.setImportant(true);
+        }
+        if (oldRequest.isAssigned()) {
+            newRequest.setAssigned(true);
+            if (oldRequest.getResource() != null) {
+                newRequest.setResource(oldRequest.getResource());
+            }
+        }
+    }
+
+//    private static void updateRecord(SQLiteDatabase sqliteDatabase, Request request) {
+//        ContentValues values = createContentValues(request);
+//        String currentPpmid;
+//        if (request.getOldPpmid() == null) {
+//            currentPpmid = request.getPpmid();
+//        } else {
+//            currentPpmid = request.getOldPpmid();
+//        }
+//        values.put(DatabaseHelper.OPERATION, Request.CHANGE);
+//        values.put(DatabaseHelper.READ, Request.UNREAD);
+//        values.put(DatabaseHelper.TIME, Long.toString(System.currentTimeMillis()));
+//        sqliteDatabase.update(DatabaseHelper.REQUEST, values, DatabaseHelper.PPMID + "=?", new String[]{currentPpmid});
+//        Log.d("SPNotification", "SQLite " + request.getPpmid() + " updated");
+//    }
 
     private static void deleteRecord(SQLiteDatabase sqliteDatabase, Request request) {
         sqliteDatabase.delete(DatabaseHelper.REQUEST,
@@ -106,7 +134,7 @@ public class DatabaseUtils {
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getReadableDatabase();
         Cursor cursor = sqliteDatabase.query(DatabaseHelper.REQUEST, null,
-                null, null, null, null, DatabaseHelper.TIME + " DESC");
+                DatabaseHelper.LATEST + "=?", new String[]{"1"}, null, null, DatabaseHelper.UID + " DESC");
 
         while (cursor.moveToNext()) {
             Request request = parseCursor(cursor);
@@ -125,7 +153,7 @@ public class DatabaseUtils {
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getReadableDatabase();
         Cursor cursor = sqliteDatabase.query(DatabaseHelper.REQUEST, null,
-                DatabaseHelper.IMPORTANT + "=?", new String[]{"1"}, null, null, DatabaseHelper.TIME + " DESC");
+                DatabaseHelper.IMPORTANT + "=? and " + DatabaseHelper.LATEST + "=?", new String[]{"1", "1"}, null, null, DatabaseHelper.UID + " DESC");
 
         while (cursor.moveToNext()) {
             Request request = parseCursor(cursor);
@@ -143,7 +171,7 @@ public class DatabaseUtils {
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getReadableDatabase();
         Cursor cursor = sqliteDatabase.query(DatabaseHelper.REQUEST, null,
-                DatabaseHelper.PPMID + "=?", new String[]{ppmid}, null, null, DatabaseHelper.ID);
+                DatabaseHelper.PPMID + "=? and " + DatabaseHelper.LATEST + "=?", new String[]{ppmid, "1"}, null, null, DatabaseHelper.ID);
 
         while (cursor.moveToNext()) {
             request = parseCursor(cursor);
@@ -165,12 +193,12 @@ public class DatabaseUtils {
         dbHelper.close();
     }
 
-    public static void updateRequestStatus(Context context, String ppmid, int status) {
+    public static void updateRequestWorkingStatus(Context context, String ppmid, int status) {
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(DatabaseHelper.STATUS, status);
+        values.put(DatabaseHelper.WORKINGSTATUS, status);
         sqliteDatabase.update(DatabaseHelper.REQUEST, values,
                 DatabaseHelper.PPMID + "=?",
                 new String[]{ppmid});
@@ -195,7 +223,7 @@ public class DatabaseUtils {
         SQLiteDatabase sqliteDatabase = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(DatabaseHelper.RESOURCE, resource);
-        values.put(DatabaseHelper.STATUS, Request.ASSIGNED);
+        values.put(DatabaseHelper.ASSIGNED, Request.ASSIGNED);
         sqliteDatabase.update(DatabaseHelper.REQUEST, values,
                 DatabaseHelper.PPMID + "=?",
                 new String[]{ppmid});
@@ -208,7 +236,7 @@ public class DatabaseUtils {
         SQLiteDatabase sqliteDatabase = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(DatabaseHelper.RESOURCE, "");
-        values.put(DatabaseHelper.STATUS, Request.NOT_STARTED);
+        values.put(DatabaseHelper.ASSIGNED, Request.NOT_ASSIGNED);
         sqliteDatabase.update(DatabaseHelper.REQUEST, values,
                 DatabaseHelper.PPMID + "=?",
                 new String[]{ppmid});
@@ -232,6 +260,8 @@ public class DatabaseUtils {
         } else {
             values.put(DatabaseHelper.PPMID, request.getPpmid());
         }
+        values.put(DatabaseHelper.UID, request.getUid());
+        values.put(DatabaseHelper.OPERATION, request.getOperation());
         if (request.getProjectName() != null) {
             values.put(DatabaseHelper.PROJECTNAME, request.getProjectName());
         }
@@ -256,12 +286,13 @@ public class DatabaseUtils {
         if (request.getLastmodified() != null) {
             values.put(DatabaseHelper.LASTMODIFY, request.getLastmodified());
         }
-        values.put(DatabaseHelper.IMPORTANT, 0);
         return values;
     }
 
     private static Request parseCursor(Cursor cursor) {
         Request request = new Request();
+        request.setUid(cursor.getLong(cursor.
+                getColumnIndex(DatabaseHelper.UID)));
         request.setPpmid(cursor.getString(cursor
                 .getColumnIndex(DatabaseHelper.PPMID)));
         request.setProjectName(cursor.getString(cursor
@@ -285,7 +316,7 @@ public class DatabaseUtils {
         request.setLastmodified(cursor.getString(cursor
                 .getColumnIndex(DatabaseHelper.LASTMODIFY)));
         if (cursor.getInt(cursor
-                .getColumnIndex(DatabaseHelper.IMPORTANT)) == 1) {
+                .getColumnIndex(DatabaseHelper.IMPORTANT)) == Request.IMPORTANT) {
             request.setImportant(true);
         } else {
             request.setImportant(false);
@@ -296,11 +327,14 @@ public class DatabaseUtils {
         } else {
             request.setRead(false);
         }
-        request.setStatus(cursor.getInt(cursor
-                .getColumnIndex(DatabaseHelper.STATUS)));
-        request.setResource(cursor.getString(cursor
-                .getColumnIndex(DatabaseHelper.RESOURCE)));
-
+        if (cursor.getInt(cursor
+                .getColumnIndex(DatabaseHelper.ASSIGNED)) == Request.ASSIGNED) {
+            request.setAssigned(true);
+            request.setResource(cursor.getString(cursor
+                    .getColumnIndex(DatabaseHelper.RESOURCE)));
+        } else {
+            request.setAssigned(false);
+        }
         Log.d("SPNotification", "SQLite " + request.getPpmid() + " selected");
         return request;
     }

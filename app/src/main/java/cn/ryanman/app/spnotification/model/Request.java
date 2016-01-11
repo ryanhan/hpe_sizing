@@ -5,12 +5,20 @@ public class Request {
     public static final int ADD = 1;
     public static final int CHANGE = 2;
     public static final int DELETE = 3;
-    public static final int UNREAD = 4;
-    public static final int READ = 5;
-    public static final int NOT_STARTED = 6;
-    public static final int ASSIGNED = 7;
-    public static final int SHARED = 8;
 
+    public static final int UNREAD = 0;
+    public static final int READ = 1;
+
+    public static final int NOT_ASSIGNED = 0;
+    public static final int ASSIGNED = 1;
+
+    public static final int OUT_OF_DATE = 0;
+    public static final int LATEST = 1;
+
+    public static final int IMPORTANT = 1;
+    public static final int NOT_IMPORTANT = 0;
+
+    private long uid;
     private String ppmid;
     private String oldPpmid;
     private String planningCycle;
@@ -20,14 +28,22 @@ public class Request {
     private String ppmStatus;
     private String teams;
     private String complete;
+    private String lastmodified;
     private int operation;
     private boolean HPSB;
     private boolean read;
-    private int status;
+    private int workingStatus;
     private String resource;
-    private String lastmodified;
     private boolean important;
-    private String sentDate;
+    private boolean assigned;
+
+    public long getUid() {
+        return uid;
+    }
+
+    public void setUid(long uid) {
+        this.uid = uid;
+    }
 
     public String getPpmid() {
         return ppmid;
@@ -117,12 +133,12 @@ public class Request {
         this.HPSB = HPSB;
     }
 
-    public int getStatus() {
-        return status;
+    public int getWorkingStatus() {
+        return workingStatus;
     }
 
-    public void setStatus(int status) {
-        this.status = status;
+    public void setWorkingStatus(int workingStatus) {
+        this.workingStatus = workingStatus;
     }
 
     public boolean isRead() {
@@ -157,12 +173,12 @@ public class Request {
         this.important = important;
     }
 
-    public String getSentDate() {
-        return sentDate;
+    public boolean isAssigned() {
+        return assigned;
     }
 
-    public void setSentDate(String sentDate) {
-        this.sentDate = sentDate;
+    public void setAssigned(boolean assigned) {
+        this.assigned = assigned;
     }
 
     @Override
@@ -180,7 +196,7 @@ public class Request {
                 "\noperation=" + operation +
                 "\nHPSB=" + HPSB +
                 "\nread=" + read +
-                "\nstatus=" + status +
+                "\nstatus=" + workingStatus +
                 "\nresource='" + resource + '\'' +
                 "\nlastmodified='" + lastmodified + '\'' +
                 "\nimportant=" + important +

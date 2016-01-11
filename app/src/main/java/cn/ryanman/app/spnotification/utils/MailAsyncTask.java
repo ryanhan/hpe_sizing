@@ -5,8 +5,9 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.sun.mail.imap.IMAPFolder;
+
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
@@ -73,36 +74,39 @@ public class MailAsyncTask extends AsyncTask<Void, Integer, Integer> {
 
         Store store = session.getStore(protocol);
         store.connect(username, password);
-        Folder inbox = store.getFolder("INBOX");
+        IMAPFolder inbox = (IMAPFolder)store.getFolder("INBOX");
         inbox.open(Folder.READ_WRITE);
-
-        String lastEmailTime = pref.getString(Value.LASTEMAILTIME, null);
         Message messages[] = inbox.getMessages();
-        if (lastEmailTime != null) {
-            Date lastDate = AppUtils.parseDate(lastEmailTime);
+        Log.d("SPNotification", "收件箱中共" + messages.length + "封邮件!");
+
+        long lastEmailUid = pref.getLong(Value.LASTEMAILUID, -1);
+        Log.d("SPNotification", "lastEmailUid: " + lastEmailUid);
+
+        if (lastEmailUid != -1) {
             for (int i = messages.length - 1; i >= 0; i--) {
-                Date date = messages[i].getSentDate();
-                if (lastDate.getTime() >= date.getTime()) {
+                long uid = inbox.getUID(messages[i]);
+                if (lastEmailUid >= uid) {
+                    //i + 1 to messages.length - 1;
                     messages = Arrays.copyOfRange(messages, i + 1, messages.length);
                     break;
-                    //i + 1 to messages.length - 1;
                 }
             }
         }
 
-        //Message messages[] = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
         Log.d("SPNotification", "收件箱中共" + messages.length + "封未读邮件!");
+        Log.d("SPNotification", "最大UID: " + inbox.getUID(messages[messages.length - 1]));
+        //Message messages[] = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
 
         if (messages.length == 0) {
             return 0;
         }
 
-        List<Request> requests = EmailUtils.parseEmailBody(messages);
+        List<Request> requests = EmailUtils.parseEmailBody(inbox, messages);
         if (requests != null) {
             DatabaseUtils.addRecords(context, requests);
         }
         SharedPreferences.Editor editor = pref.edit();
-        editor.putString(Value.LASTEMAILTIME, AppUtils.formatDate(messages[messages.length].getSentDate()));
+        editor.putLong(Value.LASTEMAILUID, inbox.getUID(messages[messages.length - 1]));
         editor.commit();
         inbox.close(false);
         store.close();
