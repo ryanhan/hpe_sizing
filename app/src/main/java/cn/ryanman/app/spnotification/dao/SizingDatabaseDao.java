@@ -1,4 +1,4 @@
-package cn.ryanman.app.spnotification.utils;
+package cn.ryanman.app.spnotification.dao;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -11,18 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.ryanman.app.spnotification.model.Request;
+import cn.ryanman.app.spnotification.utils.DatabaseHelper;
+import cn.ryanman.app.spnotification.utils.Value;
 
-public class DatabaseUtils {
+public class SizingDatabaseDao implements DatabaseDao {
 
-    public static void createDatabase(Context context) {
-        DatabaseHelper dbHelper = new DatabaseHelper(context,
-                DatabaseHelper.DATABASENAME);
-        SQLiteDatabase sqliteDatabase = dbHelper.getReadableDatabase();
-        dbHelper.close();
-    }
-
-
-    public static void addRecords(Context context, List<Request> requests) {
+    @Override
+    public void addRecords(Context context, List<Request> requests) {
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getWritableDatabase();
@@ -38,8 +33,7 @@ public class DatabaseUtils {
                 if (oldRequest != null) {
                     setOldRecord(sqliteDatabase, request.getPpmid());
                     syncNewRequest(oldRequest, request);
-                }
-                else {
+                } else {
                     request.setOperation(Request.ADD);
                 }
                 addRecord(sqliteDatabase, request);
@@ -54,7 +48,7 @@ public class DatabaseUtils {
         dbHelper.close();
     }
 
-    private static void addRecord(SQLiteDatabase sqliteDatabase, Request request) {
+    private void addRecord(SQLiteDatabase sqliteDatabase, Request request) {
         ContentValues values = createContentValues(request);
         values.put(DatabaseHelper.READ, Request.UNREAD);
         //values.put(DatabaseHelper.ASSIGNED, Request.NOT_ASSIGNED);
@@ -63,7 +57,7 @@ public class DatabaseUtils {
         Log.d("SPNotification", "SQLite " + request.getPpmid() + " inserted");
     }
 
-    private static Request searchRecord(SQLiteDatabase sqliteDatabase, String ppmid) {
+    private Request searchRecord(SQLiteDatabase sqliteDatabase, String ppmid) {
         Cursor cursor = sqliteDatabase.query(DatabaseHelper.REQUEST, null,
                 DatabaseHelper.PPMID + "=? and " + DatabaseHelper.LATEST + "=?",
                 new String[]{String.valueOf(ppmid), "1"}, null, null, null);
@@ -90,7 +84,7 @@ public class DatabaseUtils {
         return request;
     }
 
-    private static void setOldRecord(SQLiteDatabase sqliteDatabase, String ppmid) {
+    private void setOldRecord(SQLiteDatabase sqliteDatabase, String ppmid) {
         ContentValues values = new ContentValues();
         values.put(DatabaseHelper.LATEST, Request.OUT_OF_DATE);
         sqliteDatabase.update(DatabaseHelper.REQUEST, values,
@@ -98,7 +92,7 @@ public class DatabaseUtils {
                 new String[]{ppmid});
     }
 
-    private static void syncNewRequest(Request oldRequest, Request newRequest) {
+    private void syncNewRequest(Request oldRequest, Request newRequest) {
         if (oldRequest.isImportant()) {
             newRequest.setImportant(true);
         }
@@ -110,28 +104,14 @@ public class DatabaseUtils {
         }
     }
 
-//    private static void updateRecord(SQLiteDatabase sqliteDatabase, Request request) {
-//        ContentValues values = createContentValues(request);
-//        String currentPpmid;
-//        if (request.getOldPpmid() == null) {
-//            currentPpmid = request.getPpmid();
-//        } else {
-//            currentPpmid = request.getOldPpmid();
-//        }
-//        values.put(DatabaseHelper.OPERATION, Request.CHANGE);
-//        values.put(DatabaseHelper.READ, Request.UNREAD);
-//        values.put(DatabaseHelper.TIME, Long.toString(System.currentTimeMillis()));
-//        sqliteDatabase.update(DatabaseHelper.REQUEST, values, DatabaseHelper.PPMID + "=?", new String[]{currentPpmid});
-//        Log.d("SPNotification", "SQLite " + request.getPpmid() + " updated");
-//    }
-
-    private static void deleteRecord(SQLiteDatabase sqliteDatabase, Request request) {
+    private void deleteRecord(SQLiteDatabase sqliteDatabase, Request request) {
         sqliteDatabase.delete(DatabaseHelper.REQUEST,
                 DatabaseHelper.PPMID + "=?",
                 new String[]{request.getPpmid()});
     }
 
-    public static List<Request> getAllRequests(Context context) {
+    @Override
+    public List<Request> getAllRequests(Context context) {
         List<Request> requests = new ArrayList<Request>();
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
@@ -151,7 +131,8 @@ public class DatabaseUtils {
         return requests;
     }
 
-    public static List<Request> getMarkedRequests(Context context) {
+    @Override
+    public List<Request> getMarkedRequests(Context context) {
         List<Request> requests = new ArrayList<Request>();
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
@@ -169,7 +150,8 @@ public class DatabaseUtils {
         return requests;
     }
 
-    public static Request getRequestByPpmid(Context context, String ppmid) {
+    @Override
+    public Request getRequestByPpmid(Context context, String ppmid) {
         Request request = new Request();
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
@@ -185,7 +167,8 @@ public class DatabaseUtils {
         return request;
     }
 
-    public static void updateRequestRead(Context context, String ppmid, int read) {
+    @Override
+    public void updateRequestRead(Context context, String ppmid, int read) {
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getWritableDatabase();
@@ -197,7 +180,8 @@ public class DatabaseUtils {
         dbHelper.close();
     }
 
-    public static void updateRequestWorkingStatus(Context context, String ppmid, int status) {
+    @Override
+    public void updateRequestWorkingStatus(Context context, String ppmid, int status) {
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getWritableDatabase();
@@ -209,7 +193,8 @@ public class DatabaseUtils {
         dbHelper.close();
     }
 
-    public static void updateImportant(Context context, String ppmid, int isImportant) {
+    @Override
+    public void updateImportant(Context context, String ppmid, int isImportant) {
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getWritableDatabase();
@@ -221,7 +206,8 @@ public class DatabaseUtils {
         dbHelper.close();
     }
 
-    public static void updateAssginedTo(Context context, String ppmid, String resource) {
+    @Override
+    public void updateAssginedTo(Context context, String ppmid, String resource) {
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getWritableDatabase();
@@ -234,7 +220,8 @@ public class DatabaseUtils {
         dbHelper.close();
     }
 
-    public static void removeAssignee(Context context, String ppmid) {
+    @Override
+    public void removeAssignee(Context context, String ppmid) {
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getWritableDatabase();
@@ -247,7 +234,8 @@ public class DatabaseUtils {
         dbHelper.close();
     }
 
-    public static void markAllUnread(Context context) {
+    @Override
+    public void markAllUnread(Context context) {
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getWritableDatabase();
@@ -257,7 +245,7 @@ public class DatabaseUtils {
         dbHelper.close();
     }
 
-    private static ContentValues createContentValues(Request request) {
+    private ContentValues createContentValues(Request request) {
         ContentValues values = new ContentValues();
         if (request.getPpmid() == null) {
             return null;
@@ -293,7 +281,7 @@ public class DatabaseUtils {
         return values;
     }
 
-    private static Request parseCursor(Cursor cursor) {
+    private Request parseCursor(Cursor cursor) {
         Request request = new Request();
         request.setUid(cursor.getLong(cursor.
                 getColumnIndex(DatabaseHelper.UID)));

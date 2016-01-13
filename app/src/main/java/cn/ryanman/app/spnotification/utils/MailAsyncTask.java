@@ -82,7 +82,8 @@ public class MailAsyncTask extends AsyncTask<Void, Integer, Integer> {
         long lastEmailUid = pref.getLong(Value.LASTEMAILUID, -1);
         Log.d("SPNotification", "lastEmailUid: " + lastEmailUid);
 
-        if (lastEmailUid != -1) {
+        if (lastEmailUid != -1 && messages.length > 0) {
+            Log.d("SPNotification", "最大UID: " + inbox.getUID(messages[messages.length - 1]));
             for (int i = messages.length - 1; i >= 0; i--) {
                 long uid = inbox.getUID(messages[i]);
                 if (lastEmailUid >= uid) {
@@ -92,9 +93,7 @@ public class MailAsyncTask extends AsyncTask<Void, Integer, Integer> {
                 }
             }
         }
-
         Log.d("SPNotification", "收件箱中共" + messages.length + "封未读邮件!");
-        Log.d("SPNotification", "最大UID: " + inbox.getUID(messages[messages.length - 1]));
         //Message messages[] = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
 
         if (messages.length == 0) {
@@ -108,6 +107,7 @@ public class MailAsyncTask extends AsyncTask<Void, Integer, Integer> {
         SharedPreferences.Editor editor = pref.edit();
         editor.putLong(Value.LASTEMAILUID, inbox.getUID(messages[messages.length - 1]));
         editor.commit();
+        Log.d("SPNotification", "当前UID: " + inbox.getUID(messages[messages.length - 1]));
         inbox.close(false);
         store.close();
         return requests.size();

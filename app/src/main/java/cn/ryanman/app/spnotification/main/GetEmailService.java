@@ -73,6 +73,9 @@ public class GetEmailService extends Service {
 
                 @Override
                 public void onDataFailed() {
+                    if (onServiceCompletedListener != null){
+                        onServiceCompletedListener.onDataFailed();
+                    }
                     Log.d("SPNotification", "failed");
                 }
             });

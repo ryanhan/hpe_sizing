@@ -30,7 +30,6 @@ import cn.ryanman.app.spnotification.customview.XListView.IXListViewListener;
 import cn.ryanman.app.spnotification.listener.OnServiceCompletedListener;
 import cn.ryanman.app.spnotification.model.Request;
 import cn.ryanman.app.spnotification.utils.AppUtils;
-import cn.ryanman.app.spnotification.utils.CheckUpdateAsyncTask;
 import cn.ryanman.app.spnotification.utils.DatabaseUtils;
 import cn.ryanman.app.spnotification.utils.Value;
 
@@ -65,11 +64,6 @@ public class MainActivity extends Activity implements IXListViewListener {
         isRefreshing = false;
         isShowMarked = false;
         getActionBar().setDisplayShowHomeEnabled(false);
-        if (AppUtils.isWifiConnected(this)) {
-            //Toast.makeText(this, "Wifi Connected", Toast.LENGTH_SHORT).show();
-            CheckUpdateAsyncTask checkUpdateAysncTask = new CheckUpdateAsyncTask(this, false);
-            checkUpdateAysncTask.execute();
-        }
         adapter = new SizingListAdapter(this, requests);
         sizingListView.setAdapter(adapter);
         sizingListView.setPullRefreshEnable(true);
@@ -178,8 +172,7 @@ public class MainActivity extends Activity implements IXListViewListener {
 
                 @Override
                 public void onDataFailed() {
-                    sizingListView.stopRefresh();
-                    isRefreshing = false;
+                    onDataSuccessfully();
                 }
             });
 

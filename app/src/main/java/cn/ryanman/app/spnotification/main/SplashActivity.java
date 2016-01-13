@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.os.Handler;
 
 import cn.ryanman.app.spnotification.R;
+import cn.ryanman.app.spnotification.utils.AppUtils;
+import cn.ryanman.app.spnotification.utils.CheckUpdateAsyncTask;
 import cn.ryanman.app.spnotification.utils.DatabaseUtils;
 
 public class SplashActivity extends Activity {
@@ -16,6 +18,11 @@ public class SplashActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         DatabaseUtils.createDatabase(this);
+        if (AppUtils.isWifiConnected(this)) {
+            //Toast.makeText(this, "Wifi Connected", Toast.LENGTH_SHORT).show();
+            CheckUpdateAsyncTask checkUpdateAysncTask = new CheckUpdateAsyncTask(this, false);
+            checkUpdateAysncTask.execute();
+        }
         new Handler().postDelayed(new Runnable() {
 
             @Override
