@@ -1,7 +1,7 @@
 package cn.ryanman.app.spnotification.main;
 
+import android.app.IntentService;
 import android.app.NotificationManager;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,36 +10,37 @@ import android.os.IBinder;
 import android.support.v4.app.NotificationCompat.Builder;
 import android.util.Log;
 
+import java.lang.reflect.Constructor;
 import java.util.Date;
+import java.util.HashMap;
 
 import cn.ryanman.app.spnotification.R;
-import cn.ryanman.app.spnotification.listener.OnDataFinishedListener;
-import cn.ryanman.app.spnotification.listener.OnServiceCompletedListener;
+import cn.ryanman.app.spnotification.dao.EmailDao;
 import cn.ryanman.app.spnotification.utils.AppUtils;
-import cn.ryanman.app.spnotification.utils.MailAsyncTask;
 import cn.ryanman.app.spnotification.utils.Value;
 
-public class GetEmailService extends Service {
+public class GetEmailService extends IntentService {
 
     private final IBinder mBinder;
-    private OnServiceCompletedListener onServiceCompletedListener;
-    private boolean gettingEmail;
+    private EmailDao emailDao;
+    private HashMap<String, Integer> emailTypeMap;
+
+    public static final int COMMAND_TOTAL_SIZE = 0;
+    public static final int COMMAND_PROGRESS_UPDATE = 1;
+    public static final int COMMAND_SUCCESS = 2;
+    public static final int COMMAND_FAIL = 3;
+
 
     public GetEmailService() {
-        super();
+        super("GetEmailService");
         mBinder = new GetEmailBinder();
-        gettingEmail = false;
+        emailTypeMap = new HashMap<String, Integer>();
     }
 
     @Override
     public IBinder onBind(Intent intent) {
         Log.d("SPNotification", "Service binded.");
         return mBinder;
-    }
-
-    public void setOnServiceCompletedListener(
-            OnServiceCompletedListener onServiceCompletedListener) {
-        this.onServiceCompletedListener = onServiceCompletedListener;
     }
 
     @Override
@@ -51,44 +52,60 @@ public class GetEmailService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d("SPNotification", "Service Started.");
-        if (!gettingEmail) {
-            gettingEmail = true;
-            MailAsyncTask task = new MailAsyncTask(GetEmailService.this);
-            task.setOnDataFinishedListener(new OnDataFinishedListener() {
-                @Override
-                public void onDataSuccessfully(Object data) {
-                    int number = (Integer) data;
-                    SharedPreferences pref = getSharedPreferences(Value.APPINFO, Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = pref.edit();
-                    editor.putString(Value.UPDATETIME, AppUtils.formatDate(new Date()));
-                    editor.commit();
-                    if (onServiceCompletedListener != null) {
-                        onServiceCompletedListener.onDataSuccessfully();
-                    }
-                    if (number > 0) {
-                        showNotification(number);
-                    }
-                    Log.d("SPNotification", "Get Email Completed!");
-                }
-
-                @Override
-                public void onDataFailed() {
-                    if (onServiceCompletedListener != null){
-                        onServiceCompletedListener.onDataFailed();
-                    }
-                    Log.d("SPNotification", "failed");
-                }
-            });
-            gettingEmail = false;
-            task.execute();
-            Log.d("SPNotification", "Service Start to Get Email!");
+        String emailDaoName = intent.getStringExtra(Value.EMAILDAO);
+        emailTypeMap.put(emailDaoName, 1);
+        try {
+            Class<?> cls = Class.forName(Value.PACKAGENAME + ".dao." + emailDaoName);
+            Class[] paramTypes = {Context.class};
+            Object[] params = {GetEmailService.this};
+            Constructor con = cls.getConstructor(paramTypes);
+            emailDao = (EmailDao) con.newInstance(params);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
         return super.onStartCommand(intent, flags, startId);
     }
 
-    public boolean isGettingEmail() {
-        return gettingEmail;
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        if (emailDao == null) {
+            return;
+        }
+        String emailDaoName = intent.getStringExtra(Value.EMAILDAO);
+        if (emailTypeMap.containsKey(emailDaoName)) {
+            Log.d("SPNotification", "Service Start to Get Email!");
+            try {
+                int result = emailDao.getEmail();
+                SharedPreferences pref = getSharedPreferences(Value.APPINFO, Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = pref.edit();
+                editor.putString(Value.UPDATETIME, AppUtils.formatDate(new Date()));
+                editor.commit();
+                if (result > 0) {
+                    showNotification(result);
+                }
+                Log.d("SPNotification", "Get Email Completed!");
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.d("SPNotification", "Get Email Failed");
+            } finally {
+                emailTypeMap.remove(intent.getStringExtra(Value.EMAILDAO));
+            }
+        } else {
+            Log.d("SPNotification", Value.EMAILDAO + " Service Already Finished!");
+        }
+    }
+
+    public boolean isGettingEmail(String emailDaoName) {
+        if (emailTypeMap == null){
+            return false;
+        }
+        if (emailTypeMap.containsKey(emailDaoName)){
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     private void showNotification(int number) {
@@ -98,7 +115,6 @@ public class GetEmailService extends Service {
                 .setContentText("Sizing Library has " + number + " new changes!").setOngoing(false);
         notifyManager.notify(1, mBuilder.build());
     }
-
 
     public class GetEmailBinder extends Binder {
 

@@ -2,10 +2,12 @@ package cn.ryanman.app.spnotification.main;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
@@ -27,10 +29,10 @@ import java.util.List;
 import cn.ryanman.app.spnotification.R;
 import cn.ryanman.app.spnotification.customview.XListView;
 import cn.ryanman.app.spnotification.customview.XListView.IXListViewListener;
-import cn.ryanman.app.spnotification.listener.OnServiceCompletedListener;
+import cn.ryanman.app.spnotification.dao.DatabaseDao;
+import cn.ryanman.app.spnotification.dao.SizingDatabaseDao;
 import cn.ryanman.app.spnotification.model.Request;
 import cn.ryanman.app.spnotification.utils.AppUtils;
-import cn.ryanman.app.spnotification.utils.DatabaseUtils;
 import cn.ryanman.app.spnotification.utils.Value;
 
 public class MainActivity extends Activity implements IXListViewListener {
@@ -43,17 +45,21 @@ public class MainActivity extends Activity implements IXListViewListener {
     private SharedPreferences pref;
     private boolean isShowMarked;
     private LinearLayout loadingLayout;
+    private DatabaseDao sizingDatabaseDao;
+    private EmailReceiver receiver;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        sizingDatabaseDao = new SizingDatabaseDao();
         loadingLayout = (LinearLayout) findViewById(R.id.loading_layout);
         sizingListView = (XListView) findViewById(R.id.sizing_listview);
         pref = this.getSharedPreferences(Value.APPINFO, Context.MODE_PRIVATE);
-        if (pref.getBoolean(Value.FIRST, true)){
+        if (pref.getBoolean(Value.FIRST, true)) {
             Log.d("SPNotification", "First Login");
-            AppUtils.startPollingService(this, Value.INTERVAL, GetEmailService.class);
+            AppUtils.startPollingService(this, Value.INTERVAL, GetEmailService.class, Value.SIZINGEMAIL);
             SharedPreferences.Editor editor = pref.edit();
             editor.putBoolean(Value.FIRST, false);
             editor.commit();
@@ -64,7 +70,7 @@ public class MainActivity extends Activity implements IXListViewListener {
         isRefreshing = false;
         isShowMarked = false;
         getActionBar().setDisplayShowHomeEnabled(false);
-        adapter = new SizingListAdapter(this, requests);
+        adapter = new SizingListAdapter(this, requests, sizingDatabaseDao);
         sizingListView.setAdapter(adapter);
         sizingListView.setPullRefreshEnable(true);
         sizingListView.setPullLoadEnable(false);
@@ -75,7 +81,7 @@ public class MainActivity extends Activity implements IXListViewListener {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 final int index = (int) id;
                 if (!requests.get(index).isRead()) {
-                    DatabaseUtils.updateRequestRead(MainActivity.this, requests.get(index).getPpmid(), Request.READ);
+                    sizingDatabaseDao.updateRequestRead(MainActivity.this, requests.get(index).getPpmid(), Request.READ);
                 }
                 Intent intent = new Intent();
                 intent.setClass(MainActivity.this,
@@ -117,7 +123,7 @@ public class MainActivity extends Activity implements IXListViewListener {
                                 new AlertDialog.Builder(MainActivity.this).setTitle(getString(R.string.assign_to)).setItems(Value.RESOURCES, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
-                                        DatabaseUtils.updateAssginedTo(MainActivity.this, ppmid, Value.RESOURCES[which]);
+                                        sizingDatabaseDao.updateAssginedTo(MainActivity.this, ppmid, Value.RESOURCES[which]);
                                         updateList();
                                     }
                                 }).show();
@@ -128,7 +134,7 @@ public class MainActivity extends Activity implements IXListViewListener {
                                     AppUtils.shareWeixin(MainActivity.this, requests.get(index));
                                     break;
                                 } else if (itemsCount == 3) {
-                                    DatabaseUtils.removeAssignee(MainActivity.this, ppmid);
+                                    sizingDatabaseDao.removeAssignee(MainActivity.this, ppmid);
                                     updateList();
                                 }
                                 break;
@@ -161,24 +167,17 @@ public class MainActivity extends Activity implements IXListViewListener {
         public void onServiceConnected(ComponentName name, IBinder service) {
             getEmailService = ((GetEmailService.GetEmailBinder) service)
                     .getService();
-            getEmailService.setOnServiceCompletedListener(new OnServiceCompletedListener() {
-                @Override
-                public void onDataSuccessfully() {
-                    loadingLayout.setVisibility(View.GONE);
-                    sizingListView.setVisibility(View.VISIBLE);
-                    updateList();
-                    stopRefresh();
-                }
-
-                @Override
-                public void onDataFailed() {
-                    onDataSuccessfully();
-                }
-            });
-
+            registerReceiver();
             Log.d("SPNotification", "Service Connect!");
         }
     };
+
+    private void registerReceiver() {
+        receiver = new EmailReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Value.EMAILRECEIVER);
+        registerReceiver(receiver, intentFilter);
+    }
 
 
     @Override
@@ -202,13 +201,14 @@ public class MainActivity extends Activity implements IXListViewListener {
                 updateList();
                 break;
             case R.id.start_service:
-                AppUtils.restartPollingService(MainActivity.this, Value.INTERVAL, GetEmailService.class);
+                if (!getEmailService.isGettingEmail(Value.SIZINGEMAIL)) {
+                    AppUtils.restartPollingService(MainActivity.this, Value.INTERVAL, GetEmailService.class, Value.SIZINGEMAIL);
+                }
                 Toast.makeText(this, getString(R.string.start_service), Toast.LENGTH_SHORT).show();
                 break;
             case R.id.stop_service:
                 AppUtils.stopPollingService(MainActivity.this, GetEmailService.class);
                 Toast.makeText(this, getString(R.string.stop_service), Toast.LENGTH_SHORT).show();
-                //DatabaseUtils.markAllUnread(MainActivity.this);
                 updateList();
                 break;
         }
@@ -231,9 +231,11 @@ public class MainActivity extends Activity implements IXListViewListener {
     public void onRefresh() {
         if (!isRefreshing) {
             //updateList();
-            AppUtils.restartPollingService(MainActivity.this, Value.INTERVAL, GetEmailService.class);
+            if (!getEmailService.isGettingEmail(Value.SIZINGEMAIL)) {
+                AppUtils.restartPollingService(MainActivity.this, Value.INTERVAL, GetEmailService.class, Value.SIZINGEMAIL);
+                Log.d("SPNotification", "Refresh List Started.");
+            }
             isRefreshing = true;
-            Log.d("SPNotification", "Refresh List Started.");
         }
     }
 
@@ -260,9 +262,9 @@ public class MainActivity extends Activity implements IXListViewListener {
         protected List<Request> doInBackground(Boolean... params) {
             boolean isShowMarked = params[0];
             if (isShowMarked) {
-                return DatabaseUtils.getMarkedRequests(MainActivity.this);
+                return sizingDatabaseDao.getMarkedRequests(MainActivity.this);
             } else {
-                return DatabaseUtils.getAllRequests(MainActivity.this);
+                return sizingDatabaseDao.getAllRequests(MainActivity.this);
             }
         }
 
@@ -272,7 +274,21 @@ public class MainActivity extends Activity implements IXListViewListener {
                 requests.clear();
                 requests.addAll(result);
                 adapter.notifyDataSetChanged();
+                loadingLayout.setVisibility(View.GONE);
+                sizingListView.setVisibility(View.VISIBLE);
             }
+        }
+    }
+
+    private class EmailReceiver extends BroadcastReceiver {
+
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String command = intent.getStringExtra(Value.COMMAND);
+
+
+
         }
     }
 

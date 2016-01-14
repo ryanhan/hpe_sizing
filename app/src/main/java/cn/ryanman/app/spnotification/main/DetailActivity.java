@@ -14,22 +14,25 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import cn.ryanman.app.spnotification.R;
+import cn.ryanman.app.spnotification.dao.DatabaseDao;
+import cn.ryanman.app.spnotification.dao.SizingDatabaseDao;
 import cn.ryanman.app.spnotification.model.Item;
 import cn.ryanman.app.spnotification.model.Request;
 import cn.ryanman.app.spnotification.utils.AppUtils;
-import cn.ryanman.app.spnotification.utils.DatabaseUtils;
 import cn.ryanman.app.spnotification.utils.Value;
 
 public class DetailActivity extends Activity {
 
     private String id;
     private Button assign;
+    private DatabaseDao databaseDao;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
+        databaseDao = new SizingDatabaseDao();
         Bundle bundle = getIntent().getExtras();
         id = bundle.getString(Value.PPMID);
         ActionBar actionBar = this.getActionBar();
@@ -96,7 +99,7 @@ public class DetailActivity extends Activity {
                 new AlertDialog.Builder(DetailActivity.this).setTitle(getResources().getString(R.string.assign_to)).setItems(Value.RESOURCES, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        DatabaseUtils.updateAssginedTo(DetailActivity.this, id, Value.RESOURCES[which]);
+                        databaseDao.updateAssginedTo(DetailActivity.this, id, Value.RESOURCES[which]);
                         assign.setText(Value.RESOURCES[which]);
                     }
                 }).show();
@@ -150,7 +153,7 @@ public class DetailActivity extends Activity {
 
         @Override
         protected Request doInBackground(String... params) {
-            return DatabaseUtils.getRequestByPpmid(DetailActivity.this, params[0]);
+            return databaseDao.getRequestByPpmid(DetailActivity.this, params[0]);
         }
 
         @Override

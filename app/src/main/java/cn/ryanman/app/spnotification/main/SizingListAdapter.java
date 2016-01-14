@@ -12,16 +12,17 @@ import android.widget.TextView;
 import java.util.List;
 
 import cn.ryanman.app.spnotification.R;
+import cn.ryanman.app.spnotification.dao.DatabaseDao;
 import cn.ryanman.app.spnotification.model.Item;
 import cn.ryanman.app.spnotification.model.Request;
 import cn.ryanman.app.spnotification.utils.AppUtils;
-import cn.ryanman.app.spnotification.utils.DatabaseUtils;
 import cn.ryanman.app.spnotification.utils.Value;
 
 public class SizingListAdapter extends ArrayAdapter<Request> {
 
     private Context context;
     private LayoutInflater mInflater;
+    private DatabaseDao databaseDao;
 
     public final class ViewHolder {
         public LinearLayout layout;
@@ -34,10 +35,11 @@ public class SizingListAdapter extends ArrayAdapter<Request> {
         public ImageView click;
     }
 
-    public SizingListAdapter(Context context, List<Request> objects) {
+    public SizingListAdapter(Context context, List<Request> objects, DatabaseDao databaseDao) {
         super(context, 0, objects);
         mInflater = LayoutInflater.from(context);
         this.context = context;
+        this.databaseDao = databaseDao;
     }
 
     @Override
@@ -131,13 +133,13 @@ public class SizingListAdapter extends ArrayAdapter<Request> {
             public void onClick(View v) {
                 if (getItem(position).isImportant()) {
                     getItem(position).setImportant(false);
-                    DatabaseUtils.updateImportant(context, getItem(position).getPpmid(), 0);
+                    databaseDao.updateImportant(context, getItem(position).getPpmid(), 0);
                     if (v instanceof ImageView) {
                         ((ImageView) v).setImageDrawable(context.getResources().getDrawable(R.drawable.grey_flag));
                     }
                 } else {
                     getItem(position).setImportant(true);
-                    DatabaseUtils.updateImportant(context, getItem(position).getPpmid(), 1);
+                    databaseDao.updateImportant(context, getItem(position).getPpmid(), 1);
                     if (v instanceof ImageView) {
                         ((ImageView) v).setImageDrawable(context.getResources().getDrawable(R.drawable.red_flag));
                     }

@@ -1,5 +1,7 @@
-package cn.ryanman.app.spnotification.utils;
+package cn.ryanman.app.spnotification.dao;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.sun.mail.imap.IMAPFolder;
@@ -7,57 +9,126 @@ import com.sun.mail.imap.IMAPMessage;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.mail.BodyPart;
+import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Store;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.internet.MimeUtility;
 
 import cn.ryanman.app.spnotification.model.Item;
 import cn.ryanman.app.spnotification.model.Request;
+import cn.ryanman.app.spnotification.utils.AppUtils;
+import cn.ryanman.app.spnotification.utils.Value;
 
-public class EmailUtils {
+public class SizingEmailDao implements EmailDao {
 
-    public static final String PPMID = "PPM Project Number:";
-    public static final String PROJECTNAME = "PPM Project Name:";
-    public static final String TEAMS = "All Teams Needed:";
-    public static final String COMPLETE = "Sizing - Complete:";
-    public static final String PLANNINGCYCLE = "Planning Cycle:";
-    public static final String COMMENTS = "Comments From Requester:";
-    public static final String CONTACT = "Contact Name (SME) - Last, First:";
-    public static final String STATUS = "PPM Status:";
+    private final String protocol = "imap";
+    private final String username = "gis_hpe@yahoo.com";
+    private final String password = "gis123456";
 
-    public static final int PPMID_ID = 1;
-    public static final int PROJECTNAME_ID = 2;
-    public static final int TEAMS_ID = 3;
-    public static final int COMPLETE_ID = 4;
-    public static final int PLANNINGCYCLE_ID = 5;
-    public static final int COMMENTS_ID = 6;
-    public static final int CONTACT_ID = 7;
-    public static final int STATUS_ID = 8;
+    private final String PPMID = "PPM Project Number:";
+    private final String PROJECTNAME = "PPM Project Name:";
+    private final String TEAMS = "All Teams Needed:";
+    private final String COMPLETE = "Sizing - Complete:";
+    private final String PLANNINGCYCLE = "Planning Cycle:";
+    private final String COMMENTS = "Comments From Requester:";
+    private final String CONTACT = "Contact Name (SME) - Last, First:";
+    private final String STATUS = "PPM Status:";
 
-    public static final HashMap<String, Integer> map = createHashMap();
+    private final int PPMID_ID = 1;
+    private final int PROJECTNAME_ID = 2;
+    private final int TEAMS_ID = 3;
+    private final int COMPLETE_ID = 4;
+    private final int PLANNINGCYCLE_ID = 5;
+    private final int COMMENTS_ID = 6;
+    private final int CONTACT_ID = 7;
+    private final int STATUS_ID = 8;
 
-    private static HashMap<String, Integer> createHashMap() {
-        HashMap<String, Integer> map = new HashMap<String, Integer>();
-        map.put(PPMID, PPMID_ID);
-        map.put(PROJECTNAME, PROJECTNAME_ID);
-        map.put(TEAMS, TEAMS_ID);
-        map.put(COMPLETE, COMPLETE_ID);
-        map.put(PLANNINGCYCLE, PLANNINGCYCLE_ID);
-        map.put(COMMENTS, COMMENTS_ID);
-        map.put(CONTACT, CONTACT_ID);
-        map.put(STATUS, STATUS_ID);
-        return map;
+    private HashMap<String, Integer> titleMap;
+    private DatabaseDao databaseDao;
+    private Context context;
+    private SharedPreferences pref;
+
+    public SizingEmailDao(Context context) {
+        databaseDao = new SizingDatabaseDao();
+        this.context = context;
+        this.pref = context.getSharedPreferences(Value.APPINFO, Context.MODE_PRIVATE);
+        titleMap = new HashMap<String, Integer>();
+        titleMap.put(PPMID, PPMID_ID);
+        titleMap.put(PROJECTNAME, PROJECTNAME_ID);
+        titleMap.put(TEAMS, TEAMS_ID);
+        titleMap.put(COMPLETE, COMPLETE_ID);
+        titleMap.put(PLANNINGCYCLE, PLANNINGCYCLE_ID);
+        titleMap.put(COMMENTS, COMMENTS_ID);
+        titleMap.put(CONTACT, CONTACT_ID);
+        titleMap.put(STATUS, STATUS_ID);
     }
 
-    public static List<Request> parseEmailBody(IMAPFolder folder, Message[] messages) throws MessagingException, IOException {
+    @Override
+    public int getEmail() throws Exception {
+
+        Properties props = System.getProperties();
+        props.setProperty("mail.store.protocol", protocol);
+        props.setProperty("mail.imap.host", "imap.mail.yahoo.com");
+        props.setProperty("mail.imap.port", "993");
+        props.put("mail.imap.ssl.enable", true);
+
+        Session session = Session.getInstance(props);
+
+        Store store = session.getStore(protocol);
+        store.connect(username, password);
+        IMAPFolder inbox = (IMAPFolder)store.getFolder("INBOX");
+        inbox.open(Folder.READ_WRITE);
+        Message messages[] = inbox.getMessages();
+        Log.d("SPNotification", "收件箱中共" + messages.length + "封邮件!");
+
+        long lastEmailUid = pref.getLong(Value.LASTEMAILUID, -1);
+        Log.d("SPNotification", "lastEmailUid: " + lastEmailUid);
+
+        if (lastEmailUid != -1 && messages.length > 0) {
+            Log.d("SPNotification", "最大UID: " + inbox.getUID(messages[messages.length - 1]));
+            for (int i = messages.length - 1; i >= 0; i--) {
+                long uid = inbox.getUID(messages[i]);
+                if (lastEmailUid >= uid) {
+                    //i + 1 to messages.length - 1;
+                    messages = Arrays.copyOfRange(messages, i + 1, messages.length);
+                    break;
+                }
+            }
+        }
+        Log.d("SPNotification", "收件箱中共" + messages.length + "封未读邮件!");
+        //Message messages[] = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
+
+        if (messages.length == 0) {
+            return 0;
+        }
+
+        List<Request> requests = parseEmailBody(inbox, messages);
+        if (requests != null) {
+            databaseDao.addRecords(context, requests);
+        }
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putLong(Value.LASTEMAILUID, inbox.getUID(messages[messages.length - 1]));
+        editor.commit();
+        Log.d("SPNotification", "当前UID: " + inbox.getUID(messages[messages.length - 1]));
+        inbox.close(false);
+        store.close();
+        return requests.size();
+    }
+
+
+    private List<Request> parseEmailBody(IMAPFolder folder, Message[] messages) throws Exception {
         List<Request> requests = new ArrayList<Request>();
         int count = 1;
         for (Message message : messages) {
@@ -88,7 +159,7 @@ public class EmailUtils {
         return requests;
     }
 
-    private static Request parseContent(MimeMultipart multipart, String ppmid) throws IOException, MessagingException {
+    private Request parseContent(MimeMultipart multipart, String ppmid) throws IOException, MessagingException {
         if (multipart.getCount() < 2) {
             return null;
         }
@@ -120,7 +191,7 @@ public class EmailUtils {
 
     }
 
-    private static Request parsePlainEmail(String content, String ppmid) {
+    private Request parsePlainEmail(String content, String ppmid) {
 
         if (!content.contains(Value.HPSBTEAM))
             return null;
@@ -151,7 +222,7 @@ public class EmailUtils {
         return null;
     }
 
-    private static Request parseHTMLEmail(String content, Request request) {
+    private Request parseHTMLEmail(String content, Request request) {
 
         //从HTML提取内容
         Pattern pattern = Pattern.compile("<body[\\S\\s]*</body>"); //<body></body>之间的代码
@@ -210,11 +281,11 @@ public class EmailUtils {
         return request;
     }
 
-    private static void setRequest(Request request, String title, String item) {
-        if (!map.containsKey(title)) {  //title不在提取的列表中
+    private void setRequest(Request request, String title, String item) {
+        if (!titleMap.containsKey(title)) {  //title不在提取的列表中
             return;
         }
-        switch (map.get(title)) {
+        switch (titleMap.get(title)) {
             case PPMID_ID:  // Get Request Project PPMID
                 if (!item.contains(Value.SPLIT)) {
                     request.setPpmid(item);

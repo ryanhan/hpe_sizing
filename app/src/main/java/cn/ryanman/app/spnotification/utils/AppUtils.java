@@ -5,6 +5,7 @@ import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
@@ -28,13 +29,14 @@ import cn.ryanman.app.spnotification.model.Request;
 
 public class AppUtils {
 
-    public static void startPollingService(Context context, int seconds, Class<?> cls) {
+    public static void startPollingService(Context context, int seconds, Class<?> cls, String emailType) {
         //获取AlarmManager系统服务
         AlarmManager manager = (AlarmManager) context
                 .getSystemService(Context.ALARM_SERVICE);
 
         //包装需要执行Service的Intent
         Intent intent = new Intent(context, cls);
+        intent.putExtra(Value.EMAILDAO, emailType);
         PendingIntent pendingIntent = PendingIntent.getService(context, 0,
                 intent, 0);
         Calendar cal = Calendar.getInstance();
@@ -54,9 +56,16 @@ public class AppUtils {
         manager.cancel(pendingIntent);
     }
 
-    public static void restartPollingService(Context context, int seconds, Class<?> cls) {
+    public static void restartPollingService(Context context, int seconds, Class<?> cls, String emailType) {
         stopPollingService(context, cls);
-        startPollingService(context, seconds, cls);
+        startPollingService(context, seconds, cls, emailType);
+    }
+
+    public static void createDatabase(Context context) {
+        DatabaseHelper dbHelper = new DatabaseHelper(context,
+                DatabaseHelper.DATABASENAME);
+        SQLiteDatabase sqliteDatabase = dbHelper.getReadableDatabase();
+        dbHelper.close();
     }
 
     public static void shareWeixin(Context context, Request request) {

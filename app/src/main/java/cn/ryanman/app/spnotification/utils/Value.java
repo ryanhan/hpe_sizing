@@ -21,7 +21,15 @@ public class Value {
 
     public static final int CONNECT_TIMEOUT = 3000;
     public static final int READ_TIMEOUT = 5000;
+
     public static final String DOWNLOAD_DIRECTORY = "Download";
+    public static final String PACKAGENAME = "cn.ryanman.app.spnotification";
+
+    public static final String EMAILDAO = "emaildao";
+    public static final String SIZINGEMAIL = "SizingEmailDao";
+
+    public static final String EMAILRECEIVER = "EmailReceiver";
+    public static final String COMMAND = "command";
 
     public static final String[] RESOURCES = {"张勇 Allen", "魏艳芳 Elaine",  "李昱衡 Johnson", "冯洁 Mandy", "段青予 Sophie", "韩延晋 Ryan", "艾蔚 Bruce", "程强 Richard"};
 
