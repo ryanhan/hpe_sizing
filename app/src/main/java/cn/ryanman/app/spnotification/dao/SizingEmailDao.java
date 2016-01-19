@@ -89,7 +89,9 @@ public class SizingEmailDao implements EmailDao {
         Store store = session.getStore(protocol);
         store.connect(username, password);
         IMAPFolder inbox = (IMAPFolder)store.getFolder("INBOX");
+        IMAPFolder archive = (IMAPFolder)store.getFolder("Archive");
         inbox.open(Folder.READ_WRITE);
+        archive.open(Folder.READ_WRITE);
         Message messages[] = inbox.getMessages();
         Log.d("SPNotification", "收件箱中共" + messages.length + "封邮件!");
 
@@ -114,7 +116,7 @@ public class SizingEmailDao implements EmailDao {
             return 0;
         }
 
-        List<Request> requests = parseEmailBody(inbox, messages);
+        List<Request> requests = parseEmailBody(inbox, archive, messages);
         if (requests != null) {
             databaseDao.addRecords(context, requests);
         }
@@ -122,18 +124,19 @@ public class SizingEmailDao implements EmailDao {
         editor.putLong(Value.LASTEMAILUID, inbox.getUID(messages[messages.length - 1]));
         editor.commit();
         Log.d("SPNotification", "当前UID: " + inbox.getUID(messages[messages.length - 1]));
+        archive.close(false);
         inbox.close(false);
         store.close();
         return requests.size();
     }
 
 
-    private List<Request> parseEmailBody(IMAPFolder folder, Message[] messages) throws Exception {
+    private List<Request> parseEmailBody(IMAPFolder inbox, IMAPFolder archive, Message[] messages) throws Exception {
         List<Request> requests = new ArrayList<Request>();
         int count = 1;
+        List<Message> archiveMessages = new ArrayList<Message>();
         for (Message message : messages) {
             IMAPMessage msg = (IMAPMessage) message;
-
             String subject = MimeUtility.decodeText(msg.getSubject());
             Log.d("SPNotification", count++ + "/" + messages.length + "  Subject: [" + subject + "]");
             if (subject.startsWith("FW: HPIT Request for Sizing - ")) {
@@ -142,19 +145,26 @@ public class SizingEmailDao implements EmailDao {
                 if (content instanceof MimeMultipart) {
                     MimeMultipart multipart = (MimeMultipart) content;
                     Request request = parseContent(multipart, subject);
-                    if (request != null) {
+                    if (request != null && request.isHPSB()) {
                         //Set Request MessageUID
-                        request.setUid(folder.getUID(msg));
+                        request.setUid(inbox.getUID(msg));
                         requests.add(request);
                         Log.d("SPNotification", request.getPpmid());
                     }
                     else{
-                        //Archive Email
-
+                        //Record Archive Email
+                        archiveMessages.add(message);
                     }
                 }
             }
             System.out.println("-------------------------------------------");
+        }
+        if (archiveMessages.size() > 0){
+            Message message[] = new Message[archiveMessages.size()];
+            for (int i = 0; i < archiveMessages.size(); i++){
+                message[i] = archiveMessages.get(i);
+            }
+            inbox.moveMessages(message, archive);
         }
         return requests;
     }
