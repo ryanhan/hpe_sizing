@@ -152,7 +152,7 @@ public class SizingEmailDao implements EmailDao {
                         Log.d("SPNotification", request.getPpmid());
                     }
                     else{
-                        //Record Archive Email
+                        //Archive non-HPSB Email
                         archiveMessages.add(message);
                     }
                 }

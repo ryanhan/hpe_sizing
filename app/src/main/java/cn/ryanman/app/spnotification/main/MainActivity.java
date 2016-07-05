@@ -21,6 +21,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public class MainActivity extends Activity implements IXListViewListener {
         pref = this.getSharedPreferences(Value.APPINFO, Context.MODE_PRIVATE);
         if (pref.getBoolean(Value.FIRST, true)) {
             Log.d("SPNotification", "First Login");
-            AppUtils.startPollingService(this, Value.INTERVAL, GetEmailService.class, Value.SIZINGEMAIL);
+            AppUtils.startPollingService(this, Value.INTERVAL, GetEmailService.class);
             SharedPreferences.Editor editor = pref.edit();
             editor.putBoolean(Value.FIRST, false);
             editor.commit();
@@ -201,8 +202,8 @@ public class MainActivity extends Activity implements IXListViewListener {
                 updateList();
                 break;
             case R.id.start_service:
-                if (!getEmailService.isGettingEmail(Value.SIZINGEMAIL)) {
-                    AppUtils.restartPollingService(MainActivity.this, Value.INTERVAL, GetEmailService.class, Value.SIZINGEMAIL);
+                if (!getEmailService.isGettingEmail()) {
+                    AppUtils.restartPollingService(MainActivity.this, Value.INTERVAL, GetEmailService.class);
                 }
                 Toast.makeText(this, getString(R.string.start_service), Toast.LENGTH_SHORT).show();
                 break;
@@ -225,14 +226,15 @@ public class MainActivity extends Activity implements IXListViewListener {
     protected void onDestroy() {
         super.onDestroy();
         unbindService(conn);
+        unregisterReceiver(receiver);
     }
 
     @Override
     public void onRefresh() {
         if (!isRefreshing) {
             //updateList();
-            if (!getEmailService.isGettingEmail(Value.SIZINGEMAIL)) {
-                AppUtils.restartPollingService(MainActivity.this, Value.INTERVAL, GetEmailService.class, Value.SIZINGEMAIL);
+            if (!getEmailService.isGettingEmail()) {
+                AppUtils.restartPollingService(MainActivity.this, Value.INTERVAL, GetEmailService.class);
                 Log.d("SPNotification", "Refresh List Started.");
             }
             isRefreshing = true;
@@ -286,8 +288,10 @@ public class MainActivity extends Activity implements IXListViewListener {
         @Override
         public void onReceive(Context context, Intent intent) {
             String command = intent.getStringExtra(Value.COMMAND);
-
-
+            if (command.equals(Value.EMAIL_SUCCESS) || command.equals(Value.EMAIL_FAILED)){
+                updateList();
+                stopRefresh();
+            }
 
         }
     }

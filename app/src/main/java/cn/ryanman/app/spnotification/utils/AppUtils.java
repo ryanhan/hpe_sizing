@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -29,20 +30,20 @@ import cn.ryanman.app.spnotification.model.Request;
 
 public class AppUtils {
 
-    public static void startPollingService(Context context, int seconds, Class<?> cls, String emailType) {
+    public static void startPollingService(Context context, int seconds, Class<?> cls) {
         //获取AlarmManager系统服务
         AlarmManager manager = (AlarmManager) context
                 .getSystemService(Context.ALARM_SERVICE);
 
         //包装需要执行Service的Intent
         Intent intent = new Intent(context, cls);
-        intent.putExtra(Value.EMAILDAO, emailType);
         PendingIntent pendingIntent = PendingIntent.getService(context, 0,
                 intent, 0);
         Calendar cal = Calendar.getInstance();
         //使用AlarmManger的setRepeating方法设置定期执行的时间间隔（seconds秒）和需要执行的Service
         manager.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(),
                 seconds * 1000, pendingIntent);
+        Log.d("SPNotification", "Start Polling Service.");
     }
 
     //停止轮询服务
@@ -54,11 +55,13 @@ public class AppUtils {
                 intent, 0);
         //取消正在执行的服务
         manager.cancel(pendingIntent);
+        Log.d("SPNotification", "Stop Polling Service.");
     }
 
-    public static void restartPollingService(Context context, int seconds, Class<?> cls, String emailType) {
+    public static void restartPollingService(Context context, int seconds, Class<?> cls) {
+        Log.d("SPNotification", "Restart Polling Service.");
         stopPollingService(context, cls);
-        startPollingService(context, seconds, cls, emailType);
+        startPollingService(context, seconds, cls);
     }
 
     public static void createDatabase(Context context) {

@@ -1,7 +1,7 @@
 package cn.ryanman.app.spnotification.main;
 
-import android.app.IntentService;
 import android.app.NotificationManager;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -16,14 +16,20 @@ import java.util.HashMap;
 
 import cn.ryanman.app.spnotification.R;
 import cn.ryanman.app.spnotification.dao.EmailDao;
+import cn.ryanman.app.spnotification.dao.SizingEmailDao;
+import cn.ryanman.app.spnotification.listener.OnDataFinishedListener;
+import cn.ryanman.app.spnotification.listener.OnServiceCompletedListener;
 import cn.ryanman.app.spnotification.utils.AppUtils;
+import cn.ryanman.app.spnotification.utils.MailAsyncTask;
 import cn.ryanman.app.spnotification.utils.Value;
 
-public class GetEmailService extends IntentService {
+public class GetEmailService extends Service {
 
     private final IBinder mBinder;
-    private EmailDao emailDao;
-    private HashMap<String, Integer> emailTypeMap;
+    private boolean gettingEmail;
+    private Intent mIntent;
+    private OnServiceCompletedListener onServiceCompletedListener;
+
 
     public static final int COMMAND_TOTAL_SIZE = 0;
     public static final int COMMAND_PROGRESS_UPDATE = 1;
@@ -32,9 +38,10 @@ public class GetEmailService extends IntentService {
 
 
     public GetEmailService() {
-        super("GetEmailService");
+        super();
         mBinder = new GetEmailBinder();
-        emailTypeMap = new HashMap<String, Integer>();
+        gettingEmail = false;
+        mIntent = new Intent(Value.EMAILRECEIVER);
     }
 
     @Override
@@ -49,64 +56,59 @@ public class GetEmailService extends IntentService {
         Log.d("SPNotification", "Service Created.");
     }
 
+    public void setOnServiceCompletedListener(
+            OnServiceCompletedListener onServiceCompletedListener) {
+        this.onServiceCompletedListener = onServiceCompletedListener;
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d("SPNotification", "Service Started.");
-        String emailDaoName = intent.getStringExtra(Value.EMAILDAO);
-        emailTypeMap.put(emailDaoName, 1);
-        try {
-            Class<?> cls = Class.forName(Value.PACKAGENAME + ".dao." + emailDaoName);
-            Class[] paramTypes = {Context.class};
-            Object[] params = {GetEmailService.this};
-            Constructor con = cls.getConstructor(paramTypes);
-            emailDao = (EmailDao) con.newInstance(params);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (!gettingEmail) {
+            gettingEmail = true;
+            MailAsyncTask task = new MailAsyncTask(GetEmailService.this);
+            task.setOnDataFinishedListener(new OnDataFinishedListener() {
+
+                @Override
+                public void onDataSuccessfully(Object data) {
+                    int number = (Integer) data;
+                    SharedPreferences pref = getSharedPreferences(Value.APPINFO, Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = pref.edit();
+                    editor.putString(Value.UPDATETIME, AppUtils.formatDate(new Date()));
+                    editor.commit();
+//                    if (onServiceCompletedListener != null) {
+//                        onServiceCompletedListener.onDataSuccessfully();
+//                    }
+
+                    mIntent.putExtra(Value.COMMAND, Value.EMAIL_SUCCESS);
+                    sendBroadcast(mIntent);
+
+                    gettingEmail = false;
+                    if (number > 0) {
+                        showNotification(number);
+                    }
+                    Log.d("SPNotification", "Get Email Completed!");
+                }
+
+                @Override
+                public void onDataFailed() {
+                    mIntent.putExtra(Value.COMMAND, Value.EMAIL_FAILED);
+                    sendBroadcast(mIntent);
+
+                    gettingEmail = false;
+                    Log.d("SPNotification", "failed");
+                }
+            });
+            task.execute();
+            Log.d("SPNotification", "Service Start to Get Email!");
         }
         return super.onStartCommand(intent, flags, startId);
     }
 
-    @Override
-    protected void onHandleIntent(Intent intent) {
-        if (emailDao == null) {
-            return;
-        }
-        String emailDaoName = intent.getStringExtra(Value.EMAILDAO);
-        if (emailTypeMap.containsKey(emailDaoName)) {
-            Log.d("SPNotification", "Service Start to Get Email!");
-            try {
-                int result = emailDao.getEmail();
-                SharedPreferences pref = getSharedPreferences(Value.APPINFO, Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = pref.edit();
-                editor.putString(Value.UPDATETIME, AppUtils.formatDate(new Date()));
-                editor.commit();
-                if (result > 0) {
-                    showNotification(result);
-                }
-                Log.d("SPNotification", "Get Email Completed!");
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                Log.d("SPNotification", "Get Email Failed");
-            } finally {
-                emailTypeMap.remove(intent.getStringExtra(Value.EMAILDAO));
-            }
-        } else {
-            Log.d("SPNotification", Value.EMAILDAO + " Service Already Finished!");
-        }
+    public boolean isGettingEmail() {
+        return gettingEmail;
     }
 
-    public boolean isGettingEmail(String emailDaoName) {
-        if (emailTypeMap == null){
-            return false;
-        }
-        if (emailTypeMap.containsKey(emailDaoName)){
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
 
     private void showNotification(int number) {
         NotificationManager notifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -121,6 +123,7 @@ public class GetEmailService extends IntentService {
         public GetEmailService getService() {
             return GetEmailService.this;
         }
+
     }
 
     @Override

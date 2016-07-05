@@ -12,7 +12,7 @@ public class BootBroadcastReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context,Intent intent){
-        AppUtils.startPollingService(context, Value.INTERVAL, GetEmailService.class, Value.SIZINGEMAIL);
+        AppUtils.startPollingService(context, Value.INTERVAL, GetEmailService.class);
         Log.d("SPNotification", "开机自启动服务");
     }
 
