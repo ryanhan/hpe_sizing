@@ -129,13 +129,24 @@
             android:src="@drawable/grey_flag" />
 
         <TextView
+            android:id="@+id/sizing_list_assignee"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_marginLeft="10dp"
+            android:textSize="@dimen/listview_ppmid_font_size"
+            android:layout_centerVertical="true"
+            android:textStyle="bold" />
+
+        <TextView
             android:id="@+id/sizing_list_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignTop="@id/sizing_list_click"
-            android:layout_toLeftOf="@id/sizing_list_click"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginLeft="10dp"
             android:textSize="@dimen/listview_ppmid_font_size"
-            android:textStyle="bold"/>
+            android:textStyle="bold" />
 
     </RelativeLayout>
 

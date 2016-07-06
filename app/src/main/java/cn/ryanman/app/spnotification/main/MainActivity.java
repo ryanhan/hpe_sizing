@@ -93,7 +93,7 @@ public class MainActivity extends Activity implements IXListViewListener {
                 String title = null;
                 String[] items = null;
                 if (!requests.get(index).isAssigned()) {
-                    title = getString(R.string.not_started);
+                    title = getString(R.string.not_assigned);
                     items = new String[2];
                     items[0] = getString(R.string.assign);
                     items[1] = getString(R.string.share);

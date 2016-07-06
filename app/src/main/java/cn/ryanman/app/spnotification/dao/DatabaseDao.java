@@ -26,6 +26,8 @@ public interface DatabaseDao {
 
     public void removeAssignee(Context context, String ppmid);
 
+    public void updateWorkingStatus(Context context, String ppmid, int workingStatus);
+
     public void markAllUnread(Context context);
 
 }

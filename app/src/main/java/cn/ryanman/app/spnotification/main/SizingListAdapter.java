@@ -32,6 +32,7 @@ public class SizingListAdapter extends ArrayAdapter<Request> {
         public TextView sizingProjectName;
         public TextView contact;
         public TextView status;
+        public TextView assignee;
         public ImageView click;
     }
 
@@ -59,6 +60,7 @@ public class SizingListAdapter extends ArrayAdapter<Request> {
             holder.sizingProjectName = (TextView) convertView.findViewById(R.id.sizing_list_project_name);
             holder.contact = (TextView) convertView.findViewById(R.id.sizing_list_contact);
             holder.layout = (LinearLayout) convertView.findViewById(R.id.sizing_list_layout);
+            holder.assignee = (TextView) convertView.findViewById(R.id.sizing_list_assignee);
             holder.status = (TextView) convertView.findViewById(R.id.sizing_list_status);
             holder.click = (ImageView) convertView.findViewById(R.id.sizing_list_click);
             convertView.setTag(holder);
@@ -113,14 +115,18 @@ public class SizingListAdapter extends ArrayAdapter<Request> {
         }
 
         if (getItem(position).isAssigned()) {
-            holder.status.setText(getItem(position).getResource());
-            holder.status.setTextColor(context.getResources().getColor(R.color.light_blue));
+            holder.assignee.setText(getItem(position).getResource());
+            holder.assignee.setTextColor(context.getResources().getColor(R.color.light_blue));
             holder.layout.setBackgroundResource(R.drawable.listview_read_bg);
         } else {
-            holder.status.setText(context.getString(R.string.not_started));
-            holder.status.setTextColor(context.getResources().getColor(R.color.dark_grey));
+            holder.assignee.setText(context.getString(R.string.not_assigned));
+            holder.assignee.setTextColor(context.getResources().getColor(R.color.dark_grey));
             holder.layout.setBackgroundResource(R.drawable.listview_new_bg);
         }
+
+        String packageName = Value.PACKAGENAME;
+        int resId = context.getResources().getIdentifier(Request.workingStatusMap.get(getItem(position).getWorkingStatus()), "string", packageName);
+        holder.status.setText(context.getString(resId));
 
         if (getItem(position).isImportant()) {
             holder.click.setImageDrawable(context.getResources().getDrawable(R.drawable.red_flag));

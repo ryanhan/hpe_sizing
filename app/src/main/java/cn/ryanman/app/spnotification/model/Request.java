@@ -1,5 +1,8 @@
 package cn.ryanman.app.spnotification.model;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Request {
 
     public static final int ADD = 1;
@@ -15,8 +18,21 @@ public class Request {
     public static final int OUT_OF_DATE = 0;
     public static final int LATEST = 1;
 
-    public static final int IMPORTANT = 1;
     public static final int NOT_IMPORTANT = 0;
+    public static final int IMPORTANT = 1;
+
+    public static final int WORK_IN_PROGRESS = 1;
+    public static final int HOLD = 2;
+    public static final int COMPLETED = 3;
+
+    public static final Map<Integer, String> workingStatusMap = new HashMap<Integer, String>();
+
+    static {
+        workingStatusMap.put(0, "not_assigned");
+        workingStatusMap.put(1, "work_in_progress");
+        workingStatusMap.put(2, "hold");
+        workingStatusMap.put(3, "completed");
+    }
 
     private long uid;
     private String ppmid;

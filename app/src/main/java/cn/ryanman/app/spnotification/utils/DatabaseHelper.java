@@ -58,8 +58,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + PROJECTNAME + " text, " + PLANNINGCYCLE + " text, " + COMMENTS + " text, "
                 + CONTACT + " text, " + PPMSTATUS + " text, " + TEAMS + " text, "
                 + COMPLETE + " text, " + OPERATION + " integer, " + LASTMODIFY + " text, "
-                + RESOURCE + " text, " + ASSIGNED + " integer, " + READ + " integer, "
-                + LATEST + " integer, " + IMPORTANT + " integer, " + WORKINGSTATUS + " integer)");
+                + READ + " integer, " + LATEST + " integer)");
 
         db.execSQL("create table if not exists " + PROGRESS + " (" + ID
                 + " INTEGER PRIMARY KEY AUTOINCREMENT, " + PPMID + " text, " + RESOURCE + " text, "

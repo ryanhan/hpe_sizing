@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.provider.ContactsContract;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -29,10 +30,9 @@ public class SizingDatabaseDao implements DatabaseDao {
             if (request.getOperation() == Request.ADD) {
                 addRecord(sqliteDatabase, request);
             } else if (request.getOperation() == Request.CHANGE) {
-                Request oldRequest = searchRecord(sqliteDatabase, request.getPpmid());
-                if (oldRequest != null) {
+                if (isRecordExisted(sqliteDatabase, request.getPpmid())) {
                     setOldRecord(sqliteDatabase, request.getPpmid());
-                    syncNewRequest(oldRequest, request);
+                    //syncNewRequest(oldRequest, request);
                 } else {
                     request.setOperation(Request.ADD);
                 }
@@ -49,39 +49,23 @@ public class SizingDatabaseDao implements DatabaseDao {
     }
 
     private void addRecord(SQLiteDatabase sqliteDatabase, Request request) {
-        ContentValues values = createContentValues(request);
-        values.put(DatabaseHelper.READ, Request.UNREAD);
-        //values.put(DatabaseHelper.ASSIGNED, Request.NOT_ASSIGNED);
-        values.put(DatabaseHelper.LATEST, Request.LATEST);
-        sqliteDatabase.insert(DatabaseHelper.REQUEST, null, values);
+        ContentValues requestValues = createRequestValues(request);
+        sqliteDatabase.insert(DatabaseHelper.REQUEST, null, requestValues);
+
+        if (request.getOperation() == Request.ADD) {
+            ContentValues progressValues = createProgressValues(request);
+            sqliteDatabase.insert(DatabaseHelper.PROGRESS, null, progressValues);
+        }
+
         Log.d("SPNotification", "SQLite " + request.getPpmid() + " inserted");
     }
 
-    private Request searchRecord(SQLiteDatabase sqliteDatabase, String ppmid) {
+    private boolean isRecordExisted(SQLiteDatabase sqliteDatabase, String ppmId) {
         Cursor cursor = sqliteDatabase.query(DatabaseHelper.REQUEST, null,
                 DatabaseHelper.PPMID + "=? and " + DatabaseHelper.LATEST + "=?",
-                new String[]{String.valueOf(ppmid), "1"}, null, null, null);
+                new String[]{String.valueOf(ppmId), "1"}, null, null, null);
 
-        Request request = null;
-        while (cursor.moveToNext()) {
-            request = new Request();
-            if (cursor.getInt(cursor
-                    .getColumnIndex(DatabaseHelper.ASSIGNED)) == Request.ASSIGNED) {
-                request.setAssigned(true);
-                request.setResource(cursor.getString(cursor
-                        .getColumnIndex(DatabaseHelper.RESOURCE)));
-            } else {
-                request.setAssigned(false);
-            }
-            if (cursor.getInt(cursor
-                    .getColumnIndex(DatabaseHelper.IMPORTANT)) == Request.IMPORTANT) {
-                request.setImportant(true);
-            } else {
-                request.setImportant(false);
-            }
-            break;
-        }
-        return request;
+        return cursor.getCount() > 0;
     }
 
     private void setOldRecord(SQLiteDatabase sqliteDatabase, String ppmid) {
@@ -92,20 +76,11 @@ public class SizingDatabaseDao implements DatabaseDao {
                 new String[]{ppmid});
     }
 
-    private void syncNewRequest(Request oldRequest, Request newRequest) {
-        if (oldRequest.isImportant()) {
-            newRequest.setImportant(true);
-        }
-        if (oldRequest.isAssigned()) {
-            newRequest.setAssigned(true);
-            if (oldRequest.getResource() != null) {
-                newRequest.setResource(oldRequest.getResource());
-            }
-        }
-    }
-
     private void deleteRecord(SQLiteDatabase sqliteDatabase, Request request) {
         sqliteDatabase.delete(DatabaseHelper.REQUEST,
+                DatabaseHelper.PPMID + "=?",
+                new String[]{request.getPpmid()});
+        sqliteDatabase.delete(DatabaseHelper.PROGRESS,
                 DatabaseHelper.PPMID + "=?",
                 new String[]{request.getPpmid()});
     }
@@ -116,8 +91,10 @@ public class SizingDatabaseDao implements DatabaseDao {
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getReadableDatabase();
-        Cursor cursor = sqliteDatabase.query(DatabaseHelper.REQUEST, null,
-                DatabaseHelper.LATEST + "=?", new String[]{"1"}, null, null, DatabaseHelper.ID + " DESC");
+        //Cursor cursor = sqliteDatabase.query(DatabaseHelper.REQUEST, null,
+        //      DatabaseHelper.LATEST + "=?", new String[]{"1"}, null, null, DatabaseHelper.ID + " DESC");
+
+        Cursor cursor = sqliteDatabase.rawQuery("select * from (select * from " + DatabaseHelper.REQUEST + " where " + DatabaseHelper.LATEST + "=? order by " + DatabaseHelper.ID + " DESC) join " + DatabaseHelper.PROGRESS + " using (" + DatabaseHelper.PPMID + ")", new String[]{"1"});
 
         while (cursor.moveToNext()) {
             Request request = parseCursor(cursor);
@@ -137,8 +114,10 @@ public class SizingDatabaseDao implements DatabaseDao {
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getReadableDatabase();
-        Cursor cursor = sqliteDatabase.query(DatabaseHelper.REQUEST, null,
-                DatabaseHelper.IMPORTANT + "=? and " + DatabaseHelper.LATEST + "=?", new String[]{"1", "1"}, null, null, DatabaseHelper.ID + " DESC");
+        //Cursor cursor = sqliteDatabase.query(DatabaseHelper.REQUEST, null,
+//                DatabaseHelper.IMPORTANT + "=? and " + DatabaseHelper.LATEST + "=?", new String[]{"1", "1"}, null, null, DatabaseHelper.ID + " DESC");
+
+        Cursor cursor = sqliteDatabase.rawQuery("select * from (select * from " + DatabaseHelper.REQUEST + " where " + DatabaseHelper.LATEST + "=? order by " + DatabaseHelper.ID + " DESC) join " + DatabaseHelper.PROGRESS + " using (" + DatabaseHelper.PPMID + ") where " + DatabaseHelper.IMPORTANT + "=?", new String[]{"1", "1"});
 
         while (cursor.moveToNext()) {
             Request request = parseCursor(cursor);
@@ -156,8 +135,10 @@ public class SizingDatabaseDao implements DatabaseDao {
         DatabaseHelper dbHelper = new DatabaseHelper(context,
                 DatabaseHelper.DATABASENAME);
         SQLiteDatabase sqliteDatabase = dbHelper.getReadableDatabase();
-        Cursor cursor = sqliteDatabase.query(DatabaseHelper.REQUEST, null,
-                DatabaseHelper.PPMID + "=? and " + DatabaseHelper.LATEST + "=?", new String[]{ppmid, "1"}, null, null, DatabaseHelper.ID + " DESC");
+//        Cursor cursor = sqliteDatabase.query(DatabaseHelper.REQUEST, null,
+//                DatabaseHelper.PPMID + "=? and " + DatabaseHelper.LATEST + "=?", new String[]{ppmid, "1"}, null, null, DatabaseHelper.ID + " DESC");
+
+        Cursor cursor = sqliteDatabase.rawQuery("select * from (select * from " + DatabaseHelper.REQUEST + " where " + DatabaseHelper.LATEST + "=? and " + DatabaseHelper.PPMID + "=? order by " + DatabaseHelper.ID + " DESC) join " + DatabaseHelper.PROGRESS + " using (" + DatabaseHelper.PPMID + ")", new String[]{"1", ppmid});
 
         while (cursor.moveToNext()) {
             request = parseCursor(cursor);
@@ -187,7 +168,7 @@ public class SizingDatabaseDao implements DatabaseDao {
         SQLiteDatabase sqliteDatabase = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(DatabaseHelper.WORKINGSTATUS, status);
-        sqliteDatabase.update(DatabaseHelper.REQUEST, values,
+        sqliteDatabase.update(DatabaseHelper.PROGRESS, values,
                 DatabaseHelper.PPMID + "=?",
                 new String[]{ppmid});
         dbHelper.close();
@@ -200,7 +181,7 @@ public class SizingDatabaseDao implements DatabaseDao {
         SQLiteDatabase sqliteDatabase = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(DatabaseHelper.IMPORTANT, isImportant);
-        sqliteDatabase.update(DatabaseHelper.REQUEST, values,
+        sqliteDatabase.update(DatabaseHelper.PROGRESS, values,
                 DatabaseHelper.PPMID + "=?",
                 new String[]{ppmid});
         dbHelper.close();
@@ -214,7 +195,8 @@ public class SizingDatabaseDao implements DatabaseDao {
         ContentValues values = new ContentValues();
         values.put(DatabaseHelper.RESOURCE, resource);
         values.put(DatabaseHelper.ASSIGNED, Request.ASSIGNED);
-        sqliteDatabase.update(DatabaseHelper.REQUEST, values,
+        values.put(DatabaseHelper.WORKINGSTATUS, Request.WORK_IN_PROGRESS);
+        sqliteDatabase.update(DatabaseHelper.PROGRESS, values,
                 DatabaseHelper.PPMID + "=?",
                 new String[]{ppmid});
         dbHelper.close();
@@ -228,7 +210,21 @@ public class SizingDatabaseDao implements DatabaseDao {
         ContentValues values = new ContentValues();
         values.put(DatabaseHelper.RESOURCE, "");
         values.put(DatabaseHelper.ASSIGNED, Request.NOT_ASSIGNED);
-        sqliteDatabase.update(DatabaseHelper.REQUEST, values,
+        values.put(DatabaseHelper.WORKINGSTATUS, Request.NOT_ASSIGNED);
+        sqliteDatabase.update(DatabaseHelper.PROGRESS, values,
+                DatabaseHelper.PPMID + "=?",
+                new String[]{ppmid});
+        dbHelper.close();
+    }
+
+    @Override
+    public void updateWorkingStatus(Context context, String ppmid, int workingStatus) {
+        DatabaseHelper dbHelper = new DatabaseHelper(context,
+                DatabaseHelper.DATABASENAME);
+        SQLiteDatabase sqliteDatabase = dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DatabaseHelper.WORKINGSTATUS, workingStatus);
+        sqliteDatabase.update(DatabaseHelper.PROGRESS, values,
                 DatabaseHelper.PPMID + "=?",
                 new String[]{ppmid});
         dbHelper.close();
@@ -245,7 +241,7 @@ public class SizingDatabaseDao implements DatabaseDao {
         dbHelper.close();
     }
 
-    private ContentValues createContentValues(Request request) {
+    private ContentValues createRequestValues(Request request) {
         ContentValues values = new ContentValues();
         if (request.getPpmid() == null) {
             return null;
@@ -278,8 +274,24 @@ public class SizingDatabaseDao implements DatabaseDao {
         if (request.getLastmodified() != null) {
             values.put(DatabaseHelper.LASTMODIFY, request.getLastmodified());
         }
+        values.put(DatabaseHelper.READ, Request.UNREAD);
+        values.put(DatabaseHelper.LATEST, Request.LATEST);
         return values;
     }
+
+    private ContentValues createProgressValues(Request request) {
+        ContentValues values = new ContentValues();
+        if (request.getPpmid() == null) {
+            return null;
+        } else {
+            values.put(DatabaseHelper.PPMID, request.getPpmid());
+        }
+        values.put(DatabaseHelper.ASSIGNED, Request.NOT_ASSIGNED);
+        values.put(DatabaseHelper.IMPORTANT, Request.NOT_IMPORTANT);
+        values.put(DatabaseHelper.WORKINGSTATUS, Request.NOT_ASSIGNED);
+        return values;
+    }
+
 
     private Request parseCursor(Cursor cursor) {
         Request request = new Request();
@@ -307,6 +319,8 @@ public class SizingDatabaseDao implements DatabaseDao {
                 .getColumnIndex(DatabaseHelper.PLANNINGCYCLE)));
         request.setLastmodified(cursor.getString(cursor
                 .getColumnIndex(DatabaseHelper.LASTMODIFY)));
+        request.setWorkingStatus(cursor.getInt(cursor
+                .getColumnIndex(DatabaseHelper.WORKINGSTATUS)));
         if (cursor.getInt(cursor
                 .getColumnIndex(DatabaseHelper.IMPORTANT)) == Request.IMPORTANT) {
             request.setImportant(true);
