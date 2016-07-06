@@ -12,6 +12,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final int VERSION = 1;
     public static final String DATABASENAME = "sizing_db";
     public static final String REQUEST = "request";
+    public static final String PROGRESS = "progress";
     //Basic Info
     public static final String ID = "id";
     public static final String UID = "uid";
@@ -59,6 +60,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + COMPLETE + " text, " + OPERATION + " integer, " + LASTMODIFY + " text, "
                 + RESOURCE + " text, " + ASSIGNED + " integer, " + READ + " integer, "
                 + LATEST + " integer, " + IMPORTANT + " integer, " + WORKINGSTATUS + " integer)");
+
+        db.execSQL("create table if not exists " + PROGRESS + " (" + ID
+                + " INTEGER PRIMARY KEY AUTOINCREMENT, " + PPMID + " text, " + RESOURCE + " text, "
+                + ASSIGNED + " integer, " + IMPORTANT + " integer, " + WORKINGSTATUS + " integer)");
     }
 
     @Override

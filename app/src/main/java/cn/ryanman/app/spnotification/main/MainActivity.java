@@ -21,7 +21,6 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -58,15 +57,6 @@ public class MainActivity extends Activity implements IXListViewListener {
         loadingLayout = (LinearLayout) findViewById(R.id.loading_layout);
         sizingListView = (XListView) findViewById(R.id.sizing_listview);
         pref = this.getSharedPreferences(Value.APPINFO, Context.MODE_PRIVATE);
-        if (pref.getBoolean(Value.FIRST, true)) {
-            Log.d("SPNotification", "First Login");
-            AppUtils.startPollingService(this, Value.INTERVAL, GetEmailService.class);
-            SharedPreferences.Editor editor = pref.edit();
-            editor.putBoolean(Value.FIRST, false);
-            editor.commit();
-            loadingLayout.setVisibility(View.VISIBLE);
-            sizingListView.setVisibility(View.INVISIBLE);
-        }
         requests = new ArrayList<Request>();
         isRefreshing = false;
         isShowMarked = false;
@@ -219,7 +209,17 @@ public class MainActivity extends Activity implements IXListViewListener {
     @Override
     protected void onResume() {
         super.onResume();
-        updateList();
+        if (pref.getBoolean(Value.FIRST, true)) {
+            Log.d("SPNotification", "First Login");
+            AppUtils.startPollingService(this, Value.INTERVAL, GetEmailService.class);
+            SharedPreferences.Editor editor = pref.edit();
+            editor.putBoolean(Value.FIRST, false);
+            editor.commit();
+            loadingLayout.setVisibility(View.VISIBLE);
+            sizingListView.setVisibility(View.INVISIBLE);
+        } else {
+            updateList();
+        }
     }
 
     @Override
@@ -288,7 +288,7 @@ public class MainActivity extends Activity implements IXListViewListener {
         @Override
         public void onReceive(Context context, Intent intent) {
             String command = intent.getStringExtra(Value.COMMAND);
-            if (command.equals(Value.EMAIL_SUCCESS) || command.equals(Value.EMAIL_FAILED)){
+            if (command.equals(Value.EMAIL_SUCCESS) || command.equals(Value.EMAIL_FAILED)) {
                 updateList();
                 stopRefresh();
             }
