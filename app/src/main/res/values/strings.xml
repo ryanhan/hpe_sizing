@@ -29,8 +29,8 @@
     <string name="assigned">ASSIGNED</string>
     <string name="shared">SHARED</string>
 
-    <string name="assign">Assign</string>
-    <string name="assign_to">Assign To&#8230;</string>
+    <string name="assign">Assign Here</string>
+    <string name="assign_to">Assign To</string>
     <string name="share">Share</string>
     <string name="change_assign">Change Assignment</string>
     <string name="remove_assign">Remove Assignment</string>

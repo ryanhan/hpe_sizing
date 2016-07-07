@@ -117,12 +117,13 @@ public class SizingListAdapter extends ArrayAdapter<Request> {
         }
 
         if (getItem(position).isAssigned()) {
+            holder.assignee.setVisibility(View.VISIBLE);
             holder.assignee.setText(getItem(position).getResource());
             holder.assignee.setTextColor(context.getResources().getColor(R.color.light_blue));
             holder.status.setText(AppUtils.getResString(context, Request.workingStatusMap.get(getItem(position).getWorkingStatus())));
             holder.layout.setBackgroundResource(R.drawable.listview_read_bg);
         } else {
-            holder.assignee.setText("");
+            holder.assignee.setVisibility(View.INVISIBLE);
             holder.status.setText(context.getString(R.string.not_assigned));
             holder.layout.setBackgroundResource(R.drawable.listview_new_bg);
         }
@@ -162,9 +163,12 @@ public class SizingListAdapter extends ArrayAdapter<Request> {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             databaseDao.updateAssginedTo(context, getItem(position).getPpmid(), Value.RESOURCES[which]);
+                            getItem(position).setAssigned(true);
+                            getItem(position).setResource(Value.RESOURCES[which]);
+                            getItem(position).setWorkingStatus(1);
                             SizingListAdapter.this.notifyDataSetChanged();
-//                            viewHolder.assignee.setText(Value.RESOURCES[which]);
-//                            viewHolder.status.setText(context.getString(R.string.work_in_progress));
+                            //viewHolder.assignee.setText(Value.RESOURCES[which]);
+                            //viewHolder.status.setText(context.getString(R.string.work_in_progress));
                         }
                     }).show();
                 }
@@ -173,16 +177,49 @@ public class SizingListAdapter extends ArrayAdapter<Request> {
                     for (int i = 1; i < Value.WORKING_STATUS.length; i++) {
                         statusList[i - 1] = AppUtils.getResString(context, Value.WORKING_STATUS[i]);
                     }
-                    String currrentStatus = AppUtils.getResString(context, Request.workingStatusMap.get(getItem(position).getWorkingStatus()));
-                    new AlertDialog.Builder(context).setTitle(currrentStatus).setItems(statusList, new DialogInterface.OnClickListener() {
+                    new AlertDialog.Builder(context).setTitle(context.getString(R.string.change_working_status)).setItems(statusList, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             databaseDao.updateRequestWorkingStatus(context, getItem(position).getPpmid(), which + 1);
+                            //viewHolder.status.setText(statusList[which]);
+                            getItem(position).setWorkingStatus(which + 1);
                             SizingListAdapter.this.notifyDataSetChanged();
-//                            viewHolder.status.setText(statusList[which]);
                         }
                     }).show();
                 }
+            }
+        });
+
+
+        holder.assignee.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String[] items = new String[]{context.getString(R.string.change_assign), context.getString(R.string.remove_assign)};
+                new AlertDialog.Builder(context).setItems(items, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which){
+                            case 0:
+                                new AlertDialog.Builder(context).setTitle(context.getString(R.string.assign_to)).setItems(Value.RESOURCES, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        databaseDao.updateAssginedTo(context, getItem(position).getPpmid(), Value.RESOURCES[which]);
+                                        getItem(position).setResource(Value.RESOURCES[which]);
+                                        SizingListAdapter.this.notifyDataSetChanged();
+                                    }
+                                }).show();
+
+                                break;
+                            case 1:
+                                databaseDao.removeAssignee(context, getItem(position).getPpmid());
+                                getItem(position).setAssigned(false);
+                                getItem(position).setResource(null);
+                                getItem(position).setWorkingStatus(0);
+                                SizingListAdapter.this.notifyDataSetChanged();
+                                break;
+                        }
+                    }
+                }).show();
             }
         });
 

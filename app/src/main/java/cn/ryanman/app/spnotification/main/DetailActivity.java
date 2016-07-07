@@ -98,19 +98,41 @@ public class DetailActivity extends Activity {
             @Override
             public void onClick(View v) {
 
-                final String[] nameList = Arrays.copyOf(Value.RESOURCES, Value.RESOURCES.length + 1);
-                nameList[nameList.length - 1] = getString(R.string.remove_assign);
-
-                new AlertDialog.Builder(DetailActivity.this).setTitle(getResources().getString(R.string.assign_to)).setItems(nameList, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        if (which == nameList.length - 1) {
-                            databaseDao.removeAssignee(DetailActivity.this, id);
-                            assign.setText(getString(R.string.assign));
-                            workingStatus.setClickable(false);
-                            workingStatus.setBackgroundColor(getResources().getColor(R.color.disabled_button));
-                            workingStatus.setText(getString(R.string.not_assigned));
-                        } else {
+                if (!assign.getText().equals(getString(R.string.assign))) {
+                    String[] items = new String[]{getString(R.string.change_assign), getString(R.string.remove_assign)};
+                    new AlertDialog.Builder(DetailActivity.this).setItems(items, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            switch (which) {
+                                case 0:
+                                    new AlertDialog.Builder(DetailActivity.this).setTitle(getString(R.string.assign_to)).setItems(Value.RESOURCES, new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            databaseDao.updateAssginedTo(DetailActivity.this, id, Value.RESOURCES[which]);
+                                            assign.setText(Value.RESOURCES[which]);
+                                            if (!workingStatus.isClickable()) {
+                                                workingStatus.setClickable(true);
+                                                workingStatus.setBackgroundResource(R.drawable.button_status_bg);
+                                                workingStatus.setText(getString(R.string.work_in_progress));
+                                            }
+                                        }
+                                    }).show();
+                                    break;
+                                case 1:
+                                    databaseDao.removeAssignee(DetailActivity.this, id);
+                                    assign.setText(getString(R.string.assign));
+                                    workingStatus.setClickable(false);
+                                    workingStatus.setBackgroundColor(getResources().getColor(R.color.disabled_button));
+                                    workingStatus.setText(getString(R.string.not_assigned));
+                                    break;
+                            }
+                        }
+                    }).show();
+                }
+                else{
+                    new AlertDialog.Builder(DetailActivity.this).setTitle(getString(R.string.assign_to)).setItems(Value.RESOURCES, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
                             databaseDao.updateAssginedTo(DetailActivity.this, id, Value.RESOURCES[which]);
                             assign.setText(Value.RESOURCES[which]);
                             if (!workingStatus.isClickable()) {
@@ -119,8 +141,8 @@ public class DetailActivity extends Activity {
                                 workingStatus.setText(getString(R.string.work_in_progress));
                             }
                         }
-                    }
-                }).show();
+                    }).show();
+                }
             }
         });
 

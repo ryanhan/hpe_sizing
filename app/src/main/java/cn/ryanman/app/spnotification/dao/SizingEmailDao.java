@@ -116,14 +116,16 @@ public class SizingEmailDao implements EmailDao {
             return 0;
         }
 
-        List<Request> requests = parseEmailBody(inbox, archive, messages);
-        if (requests != null) {
-            databaseDao.addRecords(context, requests);
-        }
         SharedPreferences.Editor editor = pref.edit();
         editor.putLong(Value.LASTEMAILUID, inbox.getUID(messages[messages.length - 1]));
         editor.commit();
         Log.d("SPNotification", "当前UID: " + inbox.getUID(messages[messages.length - 1]));
+
+        List<Request> requests = parseEmailBody(inbox, archive, messages);
+        if (requests != null) {
+            databaseDao.addRecords(context, requests);
+        }
+
         archive.close(false);
         inbox.close(false);
         store.close();
