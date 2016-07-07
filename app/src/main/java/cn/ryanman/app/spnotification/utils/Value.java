@@ -37,5 +37,5 @@ public class Value {
 
 
     public static final String[] RESOURCES = {"张勇 Allen", "魏艳芳 Elaine",  "李昱衡 Johnson", "冯洁 Mandy", "段青予 Sophie", "韩延晋 Ryan", "艾蔚 Bruce", "程强 Richard"};
-
+    public static final String[] WORKING_STATUS = {"not_assigned", "work_in_progress", "hold", "completed"};
 }

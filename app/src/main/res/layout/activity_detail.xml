@@ -224,8 +224,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/detail_activity_small_margin"
-                android:textSize="@dimen/detail_activity_small_font_size"
-                android:textColor="@color/dark_grey"/>
+                android:textColor="@color/dark_grey"
+                android:textSize="@dimen/detail_activity_small_font_size" />
 
         </LinearLayout>
     </ScrollView>
@@ -243,16 +243,18 @@
             android:background="@drawable/button_assign_bg"
             android:text="@string/assign"
             android:textColor="@android:color/white"
+            android:textSize="@dimen/detail_activity_button_font_size"
             android:textStyle="bold" />
 
         <Button
-            android:id="@+id/button_share"
+            android:id="@+id/button_working_status"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="@drawable/button_share_bg"
-            android:text="@string/share"
+            android:background="@drawable/button_status_bg"
             android:textColor="@android:color/white"
+            android:textSize="@dimen/detail_activity_button_font_size"
             android:textStyle="bold" />
+
     </LinearLayout>
 </LinearLayout>

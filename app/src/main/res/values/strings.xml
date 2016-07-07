@@ -25,7 +25,7 @@
     <string name="menu_restart_service">Restart Listener</string>
     <string name="menu_stop_service">Stop Listener</string>
 
-    <string name="not_assigned">NOT ASSIGNED</string>
+    <string name="not_assigned">Not Assigned</string>
     <string name="assigned">ASSIGNED</string>
     <string name="shared">SHARED</string>
 
@@ -34,6 +34,7 @@
     <string name="share">Share</string>
     <string name="change_assign">Change Assignment</string>
     <string name="remove_assign">Remove Assignment</string>
+    <string name="change_working_status">Update Status</string>
 
     <string name="work_in_progress">Work in Progress</string>
     <string name="hold">Hold</string>

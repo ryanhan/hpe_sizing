@@ -17,6 +17,7 @@
     <dimen name="detail_activity_small_font_size">12sp</dimen>
     <dimen name="detail_activity_small_margin">3dp</dimen>
     <dimen name="detail_activity_big_margin">10dp</dimen>
+    <dimen name="detail_activity_button_font_size">16sp</dimen>
     <dimen name="listview_icon_size">25dp</dimen>
 
 </resources>

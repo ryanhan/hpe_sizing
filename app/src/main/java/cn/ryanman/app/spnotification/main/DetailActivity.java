@@ -8,10 +8,13 @@ import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
+import java.util.Arrays;
 
 import cn.ryanman.app.spnotification.R;
 import cn.ryanman.app.spnotification.dao.DatabaseDao;
@@ -25,7 +28,9 @@ public class DetailActivity extends Activity {
 
     private String id;
     private Button assign;
+    private Button workingStatus;
     private DatabaseDao databaseDao;
+    private Request request;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +50,8 @@ public class DetailActivity extends Activity {
         task.execute(id);
     }
 
-    private void setContent(final Request request) {
+    private void setContent(Request result) {
+        request = result;
         TextView ppmid = (TextView) findViewById(R.id.detail_ppmid);
         TextView oldPpmid = (TextView) findViewById(R.id.detail_old_ppmid);
         TextView planningCycle = (TextView) findViewById(R.id.detail_planning_cycle);
@@ -65,7 +71,8 @@ public class DetailActivity extends Activity {
         TextView lastmodify = (TextView) findViewById(R.id.detail_last_modify);
 
         assign = (Button) findViewById(R.id.button_assign);
-        Button share = (Button) findViewById(R.id.button_share);
+        workingStatus = (Button) findViewById(R.id.button_working_status);
+        //Button share = (Button) findViewById(R.id.button_share);
 
         if (request.getPpmid() != null) {
             ppmid.setText(request.getPpmid());
@@ -87,40 +94,82 @@ public class DetailActivity extends Activity {
         setTextView(status, oldStatus, request.getPpmStatus());
         lastmodify.setText(request.getLastmodified());
 
-        if (request.isAssigned()) {
-            assign.setText(request.getResource());
-        } else {
-            assign.setText(getString(R.string.assign));
-        }
-
         assign.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new AlertDialog.Builder(DetailActivity.this).setTitle(getResources().getString(R.string.assign_to)).setItems(Value.RESOURCES, new DialogInterface.OnClickListener() {
+
+                final String[] nameList = Arrays.copyOf(Value.RESOURCES, Value.RESOURCES.length + 1);
+                nameList[nameList.length - 1] = getString(R.string.remove_assign);
+
+                new AlertDialog.Builder(DetailActivity.this).setTitle(getResources().getString(R.string.assign_to)).setItems(nameList, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        databaseDao.updateAssginedTo(DetailActivity.this, id, Value.RESOURCES[which]);
-                        assign.setText(Value.RESOURCES[which]);
+                        if (which == nameList.length - 1) {
+                            databaseDao.removeAssignee(DetailActivity.this, id);
+                            assign.setText(getString(R.string.assign));
+                            workingStatus.setClickable(false);
+                            workingStatus.setBackgroundColor(getResources().getColor(R.color.disabled_button));
+                            workingStatus.setText(getString(R.string.not_assigned));
+                        } else {
+                            databaseDao.updateAssginedTo(DetailActivity.this, id, Value.RESOURCES[which]);
+                            assign.setText(Value.RESOURCES[which]);
+                            if (!workingStatus.isClickable()) {
+                                workingStatus.setClickable(true);
+                                workingStatus.setBackgroundResource(R.drawable.button_status_bg);
+                                workingStatus.setText(getString(R.string.work_in_progress));
+                            }
+                        }
                     }
                 }).show();
             }
         });
 
-        share.setOnClickListener(new View.OnClickListener() {
+        workingStatus.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AppUtils.shareWeixin(DetailActivity.this, request);
+
+                String[] statusList = new String[Value.WORKING_STATUS.length - 1];
+                for (int i = 1; i < Value.WORKING_STATUS.length; i++) {
+                    statusList[i - 1] = AppUtils.getResString(DetailActivity.this, Value.WORKING_STATUS[i]);
+                }
+
+                new AlertDialog.Builder(DetailActivity.this).setTitle(getResources().getString(R.string.change_working_status)).setItems(statusList, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        databaseDao.updateWorkingStatus(DetailActivity.this, id, which + 1);
+                        workingStatus.setText(AppUtils.getResString(DetailActivity.this, Value.WORKING_STATUS[which + 1]));
+                    }
+                }).show();
             }
         });
 
+        if (request.isAssigned()) {
+            assign.setText(request.getResource());
+            workingStatus.setClickable(true);
+            workingStatus.setBackgroundResource(R.drawable.button_status_bg);
+            workingStatus.setText(AppUtils.getResString(this, Request.workingStatusMap.get(request.getWorkingStatus())));
+        } else {
+            assign.setText(getString(R.string.assign));
+            workingStatus.setClickable(false);
+            workingStatus.setBackgroundColor(getResources().getColor(R.color.disabled_button));
+            workingStatus.setText(getString(R.string.not_assigned));
+        }
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.activity_detail, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
                 this.finish();
+                break;
+            case R.id.share:
+                AppUtils.shareWeixin(DetailActivity.this, request);
                 break;
         }
         return super.onOptionsItemSelected(item);

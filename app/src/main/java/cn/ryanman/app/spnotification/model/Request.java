@@ -3,6 +3,8 @@ package cn.ryanman.app.spnotification.model;
 import java.util.HashMap;
 import java.util.Map;
 
+import cn.ryanman.app.spnotification.utils.Value;
+
 public class Request {
 
     public static final int ADD = 1;
@@ -28,10 +30,9 @@ public class Request {
     public static final Map<Integer, String> workingStatusMap = new HashMap<Integer, String>();
 
     static {
-        workingStatusMap.put(0, "not_assigned");
-        workingStatusMap.put(1, "work_in_progress");
-        workingStatusMap.put(2, "hold");
-        workingStatusMap.put(3, "completed");
+        for (int i = 0; i < Value.WORKING_STATUS.length; i++){
+            workingStatusMap.put(i, Value.WORKING_STATUS[i]);
+        }
     }
 
     private long uid;

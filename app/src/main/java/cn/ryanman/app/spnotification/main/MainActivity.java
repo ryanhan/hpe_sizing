@@ -60,6 +60,15 @@ public class MainActivity extends Activity implements IXListViewListener {
         requests = new ArrayList<Request>();
         isRefreshing = false;
         isShowMarked = false;
+        if (pref.getBoolean(Value.FIRST, true)) {
+            Log.d("SPNotification", "First Login");
+            AppUtils.startPollingService(this, Value.INTERVAL, GetEmailService.class);
+            SharedPreferences.Editor editor = pref.edit();
+            editor.putBoolean(Value.FIRST, false);
+            editor.commit();
+            loadingLayout.setVisibility(View.VISIBLE);
+            sizingListView.setVisibility(View.INVISIBLE);
+        }
         getActionBar().setDisplayShowHomeEnabled(false);
         adapter = new SizingListAdapter(this, requests, sizingDatabaseDao);
         sizingListView.setAdapter(adapter);
@@ -99,10 +108,11 @@ public class MainActivity extends Activity implements IXListViewListener {
                     items[1] = getString(R.string.share);
                 } else {
                     title = requests.get(index).getResource();
-                    items = new String[3];
+                    items = new String[4];
                     items[0] = getString(R.string.change_assign);
                     items[1] = getString(R.string.remove_assign);
-                    items[2] = getString(R.string.share);
+                    items[2] = getString(R.string.change_working_status);
+                    items[3] = getString(R.string.share);
                 }
                 final int itemsCount = items.length;
 
@@ -124,12 +134,27 @@ public class MainActivity extends Activity implements IXListViewListener {
                                 if (itemsCount == 2) {
                                     AppUtils.shareWeixin(MainActivity.this, requests.get(index));
                                     break;
-                                } else if (itemsCount == 3) {
+                                } else{
                                     sizingDatabaseDao.removeAssignee(MainActivity.this, ppmid);
                                     updateList();
                                 }
                                 break;
                             case 2:
+                                String[] statusList = new String[Value.WORKING_STATUS.length - 1];
+                                String packageName = Value.PACKAGENAME;
+                                for (int i = 1; i < Value.WORKING_STATUS.length; i++) {
+                                    statusList[i - 1] = AppUtils.getResString(MainActivity.this, Value.WORKING_STATUS[i]);
+                                }
+                                String currrentStatus = AppUtils.getResString(MainActivity.this, Request.workingStatusMap.get(requests.get(index).getWorkingStatus()));
+                                new AlertDialog.Builder(MainActivity.this).setTitle(currrentStatus).setItems(statusList, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        sizingDatabaseDao.updateRequestWorkingStatus(MainActivity.this, ppmid, which + 1);
+                                        updateList();
+                                    }
+                                }).show();
+                                break;
+                            case 3:
                                 AppUtils.shareWeixin(MainActivity.this, requests.get(index));
                                 break;
                         }
@@ -209,17 +234,7 @@ public class MainActivity extends Activity implements IXListViewListener {
     @Override
     protected void onResume() {
         super.onResume();
-        if (pref.getBoolean(Value.FIRST, true)) {
-            Log.d("SPNotification", "First Login");
-            AppUtils.startPollingService(this, Value.INTERVAL, GetEmailService.class);
-            SharedPreferences.Editor editor = pref.edit();
-            editor.putBoolean(Value.FIRST, false);
-            editor.commit();
-            loadingLayout.setVisibility(View.VISIBLE);
-            sizingListView.setVisibility(View.INVISIBLE);
-        } else {
-            updateList();
-        }
+        updateList();
     }
 
     @Override
@@ -250,6 +265,8 @@ public class MainActivity extends Activity implements IXListViewListener {
         sizingListView.stopRefresh();
         sizingListView.setRefreshTime(pref.getString(Value.UPDATETIME, getString(R.string.never)));
         isRefreshing = false;
+        loadingLayout.setVisibility(View.GONE);
+        sizingListView.setVisibility(View.VISIBLE);
         Log.d("SPNotification", "Refresh List Finished.");
     }
 
@@ -276,8 +293,6 @@ public class MainActivity extends Activity implements IXListViewListener {
                 requests.clear();
                 requests.addAll(result);
                 adapter.notifyDataSetChanged();
-                loadingLayout.setVisibility(View.GONE);
-                sizingListView.setVisibility(View.VISIBLE);
             }
         }
     }
@@ -292,7 +307,6 @@ public class MainActivity extends Activity implements IXListViewListener {
                 updateList();
                 stopRefresh();
             }
-
         }
     }
 

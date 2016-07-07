@@ -1,6 +1,8 @@
 package cn.ryanman.app.spnotification.main;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -117,22 +119,21 @@ public class SizingListAdapter extends ArrayAdapter<Request> {
         if (getItem(position).isAssigned()) {
             holder.assignee.setText(getItem(position).getResource());
             holder.assignee.setTextColor(context.getResources().getColor(R.color.light_blue));
+            holder.status.setText(AppUtils.getResString(context, Request.workingStatusMap.get(getItem(position).getWorkingStatus())));
             holder.layout.setBackgroundResource(R.drawable.listview_read_bg);
         } else {
-            holder.assignee.setText(context.getString(R.string.not_assigned));
-            holder.assignee.setTextColor(context.getResources().getColor(R.color.dark_grey));
+            holder.assignee.setText("");
+            holder.status.setText(context.getString(R.string.not_assigned));
             holder.layout.setBackgroundResource(R.drawable.listview_new_bg);
         }
-
-        String packageName = Value.PACKAGENAME;
-        int resId = context.getResources().getIdentifier(Request.workingStatusMap.get(getItem(position).getWorkingStatus()), "string", packageName);
-        holder.status.setText(context.getString(resId));
 
         if (getItem(position).isImportant()) {
             holder.click.setImageDrawable(context.getResources().getDrawable(R.drawable.red_flag));
         } else {
             holder.click.setImageDrawable(context.getResources().getDrawable(R.drawable.grey_flag));
         }
+
+        final ViewHolder viewHolder = holder;
 
         holder.click.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -149,6 +150,38 @@ public class SizingListAdapter extends ArrayAdapter<Request> {
                     if (v instanceof ImageView) {
                         ((ImageView) v).setImageDrawable(context.getResources().getDrawable(R.drawable.red_flag));
                     }
+                }
+            }
+        });
+
+        holder.status.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (viewHolder.status.getText().equals(context.getString(R.string.not_assigned))){
+                    new AlertDialog.Builder(context).setTitle(context.getString(R.string.assign_to)).setItems(Value.RESOURCES, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            databaseDao.updateAssginedTo(context, getItem(position).getPpmid(), Value.RESOURCES[which]);
+                            SizingListAdapter.this.notifyDataSetChanged();
+//                            viewHolder.assignee.setText(Value.RESOURCES[which]);
+//                            viewHolder.status.setText(context.getString(R.string.work_in_progress));
+                        }
+                    }).show();
+                }
+                else{
+                    final String[] statusList = new String[Value.WORKING_STATUS.length - 1];
+                    for (int i = 1; i < Value.WORKING_STATUS.length; i++) {
+                        statusList[i - 1] = AppUtils.getResString(context, Value.WORKING_STATUS[i]);
+                    }
+                    String currrentStatus = AppUtils.getResString(context, Request.workingStatusMap.get(getItem(position).getWorkingStatus()));
+                    new AlertDialog.Builder(context).setTitle(currrentStatus).setItems(statusList, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            databaseDao.updateRequestWorkingStatus(context, getItem(position).getPpmid(), which + 1);
+                            SizingListAdapter.this.notifyDataSetChanged();
+//                            viewHolder.status.setText(statusList[which]);
+                        }
+                    }).show();
                 }
             }
         });

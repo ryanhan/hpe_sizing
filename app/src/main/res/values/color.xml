@@ -9,5 +9,6 @@
     <color name="light_blue">#2c8cd5</color>
     <color name="dark_blue">#2083ce</color>
     <color name="dark_green">#08a68b</color>
+    <color name="disabled_button">#949494</color>
 
 </resources>
